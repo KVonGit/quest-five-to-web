@@ -85,6 +85,19 @@ namespace TextAdventures.Quest
                     attribute = attribute.Replace(" ", Utility.SpaceReplacementString);
                 }
 
+                // Added by KV to disable the map, which does not work at all
+                if (attribute.Contains("gridmap"))
+                {
+                    attribute = "gridmapdisabled";
+                }
+
+                // Added by KV to fix errors when attribute strings contain line breaks
+                if (attribute.Contains("uistatus") &&  (value.Contains("\n") || value.Contains("\r\n")))
+                {
+                    value = value.Replace("\n", "<br/>");
+                    value = value.Replace("\r\n", "<br/>");
+                }
+
                 writer.AddLine(string.Format("\"{0}\": {1}{2}", attribute, value, isFinal ? "" : ","));
             }
         }

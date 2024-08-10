@@ -78,8 +78,9 @@ namespace TextAdventures.Quest
 
         public void Save(Element e, GameWriter writer)
         {
+            //Fixed to convert 580 games
             if (e.Fields[FieldDefinitions.TemplateName] == "EditorVerbDefaultExpression") return;
-            writer.AddLine(string.Format("templates.t_{0} = \"{1}\"", e.Fields[FieldDefinitions.TemplateName], e.Fields[FieldDefinitions.Text].Replace("\n", "").Replace("\r", "")));
+            writer.AddLine(string.Format("templates.t_{0} = `{1}`", e.Fields[FieldDefinitions.TemplateName], e.Fields[FieldDefinitions.Text].Replace("\n", "").Replace("\r", "")));
         }
     }
 

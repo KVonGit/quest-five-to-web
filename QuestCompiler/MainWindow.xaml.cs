@@ -27,6 +27,16 @@ namespace QuestCompiler
 
         public MainWindow()
         {
+            var s = "";
+            s = s + "Converted games do no display in-game maps. If you have one included, ";
+            s = s + "it will be ignored.";
+			s = s + "\n\nThe setCustomStatus() function will also be ignored due to errors.";
+            s = s + "\n\nConverted games have most of the same HTML elements that Quest has, ";
+            s = s + "but some have a different ID or class. (You can use the developer tools in your ";
+            s = s + "browser to find the ID or class of an element.)";
+            s = s + "\n\nIf you have named an object 'key', it will be renamed 'key '. ";
+            s = s + "(All scripts will point to it, and the alias will be set to 'key'.)";
+            MessageBox.Show(s, "Quest Compiler (Version 6.5): A Few Words of Warning"); 
             InitializeComponent();
             compiler.CompileFinished += compiler_CompileFinished;
             compiler.StatusUpdated += compiler_StatusUpdated;
@@ -88,10 +98,13 @@ namespace QuestCompiler
                 TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.None;
                 if (result.Success)
                 {
-                    if (cmbProfile.Text == "Web")
+                    /* 
+					// Altered by KV. Nothing works expcept for Web.
+					if (cmbProfile.Text == "Web")
                     {
                         System.Diagnostics.Process.Start(result.IndexHtml);
-                    }
+                    } */
+					System.Diagnostics.Process.Start(result.IndexHtml);
                     if (result.Warnings.Any())
                     {
                         txtOutput.Text += string.Join(Environment.NewLine, result.Warnings);

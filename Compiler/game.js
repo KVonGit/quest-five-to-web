@@ -1,4 +1,12 @@
-﻿var selectSizeWithoutStatus = 8;
+/*
+Quest Compiler
+KVMod
+version 6.5
+
+game.js version 20240809.0433
+*/
+
+var selectSizeWithoutStatus = 8;
 var selectSizeWithStatus = 6;
 var numCommands = 0;
 var thisCommand = 0;
@@ -8,10 +16,44 @@ var tickCount = 0;
 var sendNextGameTickerAfter = 0;
 var verbButtonCount = 9;
 var commandLog = null;
+var canSendCommand = true;
+var qjsPlayer = true;
+var multiple = false;
+var speakEnabled = false;
 
+var game;
 function init() {
+    game = GetObject("game");
     showStatusVisible(false);
-
+	game.qjsPlayer = true;
+    var newFont = GetAttribute(GetObject("game"), "defaultfont");
+    if (HasAttribute(GetObject("game"), "cover") && GetAttribute(GetObject("game"), "cover") != "") {
+        $("#cover-art").attr('href',GetAttribute(GetObject("game"), "cover")).show();
+        $("#cover-pic").attr('src',GetFileURL(GetAttribute(GetObject("game"), "cover")));
+    }
+    if (HasAttribute(GetObject("game"), "mailto") && GetAttribute(GetObject("game"), "mailto") != '') {
+        $("#contact-div").show();
+        var mailto = GetAttribute(GetObject("game"), "mailto");
+        var link =  $("#contact-link").attr('href');
+        var newlink = link.replace(/\$\$YOUREMAILADDRESS\$\$/, mailto);
+        $("#contact-link").attr('href', newlink);
+    }
+    if (HasAttribute(GetObject("game"), "defaultwebfont")) {
+        var s = "<link href=\"https://fonts.googleapis.com/css?family=";
+        s += GetAttribute(GetObject("game"), "defaultwebfont");
+        s += "\" rel=\"stylesheet\">";
+        $("body").append(s);
+        GetObject("game").defaultfont = GetObject("game").defaultwebfont + ", " + GetObject("game").defaultfont;
+        newFont = GetAttribute(GetObject("game"), "defaultwebfont");
+    }
+    $('body').css('background', GetObject('game').defaultbackground);
+    $("#divOutput div span").css("font-family", newFont);
+    $("#fontSample").css("font-family", newFont);
+    currentFont = newFont;
+    var newFontSize = GetAttribute(GetObject("game"), "defaultfontsize");
+    $("#divOutput div span").css("font-size", newFontSize + "pt");
+    $("#fontSample").css("font-size", newFontSize + "pt");
+    currentFontSize = newFontSize;
     $("#button-restart").button().click(function () {
         $("#button-restart").removeClass("ui-state-focus ui-state-hover");
         uiDoRestart();
@@ -51,21 +93,29 @@ function init() {
         set(GetObject("game"), "defaultfontsize", parseInt(newFontSize));
         saveGame();
     });
-
-    $(document).on("click", ".elementmenu", function (event) {
+	
+    $(document).on("click", function () {
+        if (_waitMode) {
+            endWait();
+            $("#txtCommand").focus();
+        }
+    });
+	
+	$(document).on("click", ".elementmenu", function (event) {
         if (!$(this).hasClass("disabled")) {
             event.preventDefault();
             event.stopPropagation();
-            // TO DO
             $(this).blur();
             return false;
         }
+        $("#txtCommand").focus();
     });
 
     $(document).on("click", ".exitlink", function () {
         if (!$(this).hasClass("disabled")) {
             sendCommand($(this).data("command"));
         }
+        $("#txtCommand").focus();
     });
 
     $(document).on("click", ".commandlink", function () {
@@ -77,12 +127,55 @@ function init() {
             }
             sendCommand($this.data("command"));
         }
+        $("#txtCommand").focus();
     });
+
+    $(document).on("click", "#compassLabel", function () {
+        $("#compassAccordion").toggle();
+    });
+    $(document).on("click", "#placesObjectsLabel", function () {
+        $("#objectsList").toggle();
+    });
+    $(document).on("click", "#inventoryLabel", function () {
+        $("#inventoryList").toggle();
+    });
+    $("#gamePanes").css("min-width", $("#gamePanes").width());
 
     worldmodelInitialise();
     if (!loadGame()) {
         worldModelBeginGame();
     }
+    if ($(window).width() < 800) {
+        currentTab = "string";
+    }
+    if (ListContains(AllObjects(), GetObject("key "))) {
+        GetObject("key ").alias = "key";
+    }
+    GetObject("game").runturnscripts = false;
+    TryFinishTurn();
+}
+
+function endWait() {
+    if (!_waitMode) return;
+    sendEndWait();
+}
+
+function sendEndWait() {
+    waitEnded();
+
+}
+
+function waitEnded() {
+    _waitMode = false;
+    $("#endWaitLink").remove();
+    $("#divCommand").show();
+    beginningOfCurrentTurnScrollPosition = $("#gameContent").height();
+    window.setTimeout(function () {
+       awaitingCallback = false;
+       waitCallback();
+       TryFinishTurn();
+       $("#txtCommand").focus();
+    }, 100);
 }
 
 function extLink(url) {
@@ -119,6 +212,12 @@ function scrollToEndNow() {
 }
 
 function updateLocation(text) {
+    if (GetObject("game").showlocation) {
+        $("#location").html(text);
+    }
+    else {
+        $("#location").hide();
+    }
 }
 
 var _waitMode = false;
@@ -136,20 +235,24 @@ function beginWait() {
     }
     _waitMode = true;
     waitButtonId++;
-    addText("<a class=\"cmdlink\" style=\"color:" + currentLinkForeground + ";font-family:" + currentFont + ";font-size:" + currentFontSize + "pt;\" id=\"waitButton" + waitButtonId + "\" >Continue...</a><br/><br/>");
-    $("#waitButton" + waitButtonId).click(function () {
+    addText("<a class=\"cmdlink\" style=\"color:" + currentLinkForeground + ";font-family:" + currentFont + ";font-size:" + currentFontSize + "pt;\" id=\"endWaitLink\" >Continue...</a><br/><br/>");
+    $("#endWaitLink").click(function () {
         _waitMode = false;
-        $(this).hide();
+        $(this).remove();
         $("#divCommand").show();
+        
         beginningOfCurrentTurnScrollPosition = $("#gameContent").height();
         window.setTimeout(function () {
             awaitingCallback = false;
             waitCallback();
             TryFinishTurn();
+            $("#txtCommand").focus();
         }, 100);
     });
     $("#divCommand").hide();
 }
+
+
 
 function beginPause(ms) {
     _pauseMode = true;
@@ -169,9 +272,17 @@ function endPause() {
     }, 100);
 }
 
+function SetTimeout(time,todo){
+    setTimeout(eval(todo),time * 1000);
+}
+
+
 function globalKey(e) {
     if (_waitMode) {
         endWait();
+        if (e.keyCode == 13) {
+            e.preventDefault();
+        }
         return;
     }
 }
@@ -194,6 +305,12 @@ function commandKey(e) {
         case 27:
             thisCommand = numCommands + 1;
             $("#txtCommand").val("");
+            break;
+        case 82:
+            if (e.ctrlKey) {
+                uiDoRestart();
+                e.preventDefault();
+            }
             break;
     }
 }
@@ -331,16 +448,50 @@ function disableInterface() {
 }
 
 function playWav(filename, sync, looped) {
+    playAudio(filename, sync, looped);
 }
 
 function playMp3(filename, sync, looped) {
-    playAudio(filename, "mp3", sync, looped);
+    playAudio(filename, sync, looped);
 }
 
-function playAudio(filename, format, sync, looped) {
+//function playAudio(filename, format, sync, looped) {
+function playAudio(filename, sync, looped) {
+    stopAudio();
+    msg(" <audio autoplay id='audio-div'><source src='"+filename+"'>Your browser does not support the audio element.</audio> ");
+    soundDiv = document.getElementById('audio-div');
+    if (looped) {
+        $("#audio-div").attr('loop', true);
+        if (typeof soundDiv.loop == 'boolean') {
+            soundDiv.loop = true;
+        }
+        else {
+            soundDiv.addEventListener('ended', function () {
+                soundDiv.currentTime = 0;
+                soundDiv.play();
+            }, false);
+        }
+    }
+    if (sync) {
+        _waitingForSoundToFinish = true;
+        $("#divCommand").hide();
+        $("#gamePanes").hide();
+        setTimeout(function () { $('a').css('color', 'black'); }, 500);
+        soundDiv.addEventListener('ended', function () {
+            stopAudio();
+        }, false);
+    }
+    //$("#audio-div")[0].play();
 }
 
 function stopAudio() {
+    $("#audio-div").remove();
+    $("#divCommand").show();
+    $("#gamePanes").show();
+    $('a').css('color', 'blue');
+    if (_waitingForSoundToFinish) {
+        _waitingForSoundToFinish = false;
+    }
 }
 
 function finishSync() {
@@ -385,6 +536,7 @@ function updateList(listName, listData) {
     }
 
     if (listName == "placesobjects") {
+        $('#gameObjects').show();
         listElement = "#objectsList";
         emptyListLabel = "#placesObjectsEmpty";
     }
@@ -397,14 +549,39 @@ function updateList(listName, listData) {
     $.each(listData, function (key, value) {
         var splitString = value.split(":");
         var objectDisplayName = splitString[0];
+        if (typeof (thisObj) !== "undefined") {
+            return false;
+        }
         var objectVerbs = splitString[1];
-
-        if (listName == "inventory" || $.inArray(objectDisplayName, _compassDirs) == -1) {
+        var hasListAlias = false;
+        var thisObj = GetObject(objectDisplayName);
+        var objNameToClass = objectDisplayName.replace(/ /g, '-');
+        var objectListAlias = objectDisplayName;
+        if (typeof (thisObj) !== "undefined") {
+            if (typeof (thisObj['listalias']) === "string") {
+                if (thisObj['listalias'] !== "") {
+                    hasListAlias = true;
+                    objectListAlias = ProcessText(thisObj['listalias']);
+                }
+            }
+        }
+        if (listName == "inventory" && !_compassDirs.includes(objectListAlias)) {
             listcount++;
             lastPaneLinkId++;
             var paneLinkId = "paneLink" + lastPaneLinkId;
             $(listElement).append(
-                "<li id=\"" + paneLinkId + "\" href=\"#\">" + objectDisplayName + "</li>"
+                "<li id=\"" + paneLinkId + "\" class=\"" + objNameToClass + "\" href=\"#\">" + objectListAlias + "</li>"
+            );
+            bindMenu(paneLinkId, objectVerbs, objectDisplayName, false);
+            anyItem = true;
+        }
+        else if (listName == "placesobjects" && !_compassDirs.includes(objectListAlias)) {
+
+            listcount++;
+            lastPaneLinkId++;
+            var paneLinkId = "paneLink" + lastPaneLinkId;
+            $(listElement).append(
+				"<li id=\"" + paneLinkId + "\" class=\"" + objNameToClass + "\" href=\"#\">" + objectListAlias + "</li>"
             );
             bindMenu(paneLinkId, objectVerbs, objectDisplayName, false);
             anyItem = true;
@@ -436,11 +613,51 @@ function updateCompass(directions) {
 }
 
 function updateDir(directions, label, dir) {
-    $("#cmdCompass" + label).attr("disabled", $.inArray(dir, directions) == -1);
+    if (!directions.includes(dir)) {
+        $("#cmdCompass" + label).button("disable");
+        $("#cmdCompass" + label).addClass("ui-state-disabled").addClass("ui-button-disabled");
+    }
+    else {
+        $("#cmdCompass" + label).button("enable");
+        $("#cmdCompass" + label).removeClass("ui-state-disabled").removeClass("ui-button-disabled");
+    }
 }
+
 
 function compassClick(direction) {
     sendCommand(direction);
+}
+
+
+
+function addExternalStylesheet(source) {
+    var link = $("<link>");
+    link.attr({
+        type: "text/css",
+        rel: "stylesheet",
+        href: source
+    });
+    $("head").append(link);
+}
+
+function AddExternalStylesheet(stylesheet)
+
+{
+
+    if (GetObject("game").externalstylesheets == null) {
+
+        set(GetObject("game"), "externalstylesheets", NewStringList());
+
+        }
+
+    if (!(ListContains(GetObject("game").externalstylesheets, stylesheet))) {
+
+        listadd(GetObject("game").externalstylesheets, stylesheet);
+
+        addExternalStylesheet (stylesheet)
+
+    }
+
 }
 
 function sendCommand(text) {
@@ -477,6 +694,15 @@ function sendCommand(text) {
             if (text.substring(0, 6) == "cheat ") {
                 runCheatCode(text.substring(6));
             }
+            else if (text.trim().toLowerCase() == "restart") {
+                uiDoRestart();
+            }
+            else if (text.trim().toLowerCase() == "menu") {
+                $("#moreBtn").click();
+            }
+            else if (text.trim().toLowerCase() == "transcript" || text.trim().toLowerCase() == "script") {
+                showTranscript();
+            }
             else {
                 sendCommandInternal(text);
             }
@@ -491,7 +717,9 @@ function sendCommandInternal(command) {
     addToCommandLog(command);
     HandleCommand(command);
     var diff = (new Date).getTime() - start;
-    TryFinishTurn();
+    if (typeof (GetObject("game").aslversion) == 'undefined' || game.aslversion < 580) {
+        TryFinishTurn();
+    }
 }
 
 function addToCommandLog(command) {
@@ -500,11 +728,20 @@ function addToCommandLog(command) {
     }
     commandLog.push(command);
 }
-
+/*
 function runCheatCode(code) {
     var walkthrough = window["object_main"];
     if (walkthrough.steps.indexOf("label:" + code) > -1) {
         runWalkthrough("main", 0, 0, code);
+    }
+    else {
+        sendCommandInternal("cheat " + code);
+    }
+}
+*/
+function runCheatCode(code) {
+    if (typeof (getElement(code)) != 'undefined' && getElement(code).steps.length > 0) {
+        runWalkthrough(code);
     }
     else {
         sendCommandInternal("cheat " + code);
@@ -760,6 +997,7 @@ function loadGame() {
             else {
                 createInternal(params[0], array, GetObject(params[1]), params[2]);
                 // TODO: Add to objectsNameMap
+                objectsNameMap[GetObject(params[0])] = GetObject(params[0]);
             }
         }
 
@@ -862,7 +1100,7 @@ function loadGame() {
             var data = localStorageGet("destroy" + i);
             destroy(data);
         }
-
+        game = GetObject("game");
         currentFont = GetObject("game").defaultfont;
         $("#fontOptions").val(currentFont);
 
@@ -923,6 +1161,7 @@ function runWalkthrough(name, startStep, maxSteps, cheatCode) {
     walkthroughMaxSteps = maxSteps;
     walkthroughFinishCode = cheatCode;
     var walkthrough = getElement(name);
+    if (walkthrough == undefined) { var walkthrough = getElement("main"); }
     if (walkthrough) {
         currentWalkthroughSteps = addWalkthroughSteps(walkthrough);
         currentWalkthroughSteps.splice(0, startStep);
@@ -1066,7 +1305,11 @@ function goUrl(href) {
 }
 
 function setCompassDirections(directions) {
-    _compassDirs = directions;
+    if (typeof directions === "string") {
+        _compassDirs = directions.split(";")
+    } else {
+        _compassDirs = directions;
+    }
     $("#cmdCompassNW").attr("title", _compassDirs[0]);
     $("#cmdCompassN").attr("title", _compassDirs[1]);
     $("#cmdCompassNE").attr("title", _compassDirs[2]);
@@ -1128,24 +1371,58 @@ function setCommandBarStyle(style) {
     $("#txtCommand").width(width);
 }
 
+var transcriptArr = [];
 function addText(text) {
     if (_currentDiv == null) {
         createNewDiv("left");
     }
-
+	transcriptArr.push(text + '\n');
     _currentDiv.append(text);
     scrollToEnd();
 }
 
+
 var _divCount = 0;
 
 function createNewDiv(alignment) {
+    var classes = _outputSections.join(" ");
     _divCount++;
     $("<div/>", {
         id: "divOutputAlign" + _divCount,
-        style: "text-align: " + alignment
+        style: "text-align: " + alignment,
+        "class": classes
     }).appendTo("#divOutput");
-    _currentDiv = $("#divOutputAlign" + _divCount);
+    setCurrentDiv("#divOutputAlign" + _divCount);
+}
+
+var _currentDiv = null;
+
+function getCurrentDiv() {
+    if (_currentDiv) return _currentDiv;
+
+    var divId = $("#outputData").attr("data-currentdiv");
+    if (divId) {
+        _currentDiv = $(divId);
+        return _currentDiv;
+    }
+
+    return null;
+}
+
+function setCurrentDiv(div) {
+    _currentDiv = $(div);
+    $("#outputData").attr("data-currentdiv", div);
+}
+
+var _divCount = -1;
+
+function getDivCount() {
+    return _divCount;
+}
+
+function setDivCount(count) {
+    _divCount = count;
+    $("#outputData").attr("data-divcount", _divCount);
 }
 
 function bindMenu(linkid, verbs, text, inline) {
@@ -1176,6 +1453,11 @@ function updateObjectLinks(data) {
         } else {
             $e.addClass("disabled");
         }
+		var verbs = $(this).attr('data-verbs');
+		var linkid = $(this).attr('id');
+		var text = $(this).html();
+		var inline = false;
+		bindMenu(linkid, verbs, text, inline);
     });
 }
 
@@ -1208,14 +1490,19 @@ function updateCommandLinks(data) {
 function disableAllCommandLinks() {
     $(".commandlink").each(function (index, e) {
         $(e).addClass("disabled");
+		$(e).href('');
     });
 }
 
 function clearScreen() {
     allOutput = "";
+    $("#divOutput").css("min-height", 0);
     $("#divOutput").html("");
     createNewDiv("left");
     beginningOfCurrentTurnScrollPosition = 0;
+    setTimeout(function () {
+        $("html,body").scrollTop(0);
+    }, 100);
 }
 
 function keyPressCode(e) {
@@ -1314,7 +1601,12 @@ function JsHideOutputSection(name) {
 }
 
 function getCSSRule(ruleName, deleteFlag) {
-    ruleName = ruleName.toLowerCase();
+    /*
+    disabled by kv 20240730 to avoid this error:
+       Uncaught DOMException: CSSStyleSheet.cssRules getter: Not allowed to access cross-origin stylesheet
+    */
+    console.log("MESSAGE FROM KV: getCSSRule bypassed...");
+/* ruleName = ruleName.toLowerCase();
     if (document.styleSheets) {
         for (var i = 0; i < document.styleSheets.length; i++) {
             var styleSheet = document.styleSheets[i];
@@ -1345,7 +1637,7 @@ function getCSSRule(ruleName, deleteFlag) {
                 ii++;
             } while (cssRule)
         }
-    }
+    } */
     return false;
 }
 
@@ -1370,6 +1662,7 @@ function uiDoRestart() {
     if (localStorage) {
         localStorage.clear();
     }
+    $("input#txtCommand").val("");
     window.location.reload();
 }
 
@@ -1409,6 +1702,7 @@ function worldModelBeginGame() {
     StartGame();
     TryRunOnReadyScripts();
     updateLists();
+    $("input#txtCommand").focus();
 }
 
 function resolveObjectReferences() {
@@ -1419,6 +1713,7 @@ function resolveObjectReferences() {
     for (var item in objectListReferences) {
         var objData = objectListReferences[item];
         var parent = window[objData[0]];
+        if (parent == undefined) { parent = GetObject("game"); }
         var attribute = objData[1].replace(/ /g, "___SPACE___");
         var itemValue = objData[2];
         if (typeof parent[attribute] == "undefined") {
@@ -1428,6 +1723,7 @@ function resolveObjectReferences() {
     }
     for (var item in objectDictionaryReferences) {
         var objData = objectDictionaryReferences[item];
+        if (parent == undefined) { parent = GetObject("game"); }
         var parent = window[objData[0]];
         var attribute = objData[1].replace(/ /g, "___SPACE___");
         var itemKey = objData[2];
@@ -1474,7 +1770,7 @@ function updateObjectsLists() {
     updateObjectsList("ScopeInventory", "inventory");
 }
 
-function updateObjectsList(scope, listName) {
+/* function updateObjectsList(scope, listName) {
     var listItems = window[scope]();
     if (scope == "GetPlacesObjectsList") {
         listItems = listItems.concat(ScopeExits());
@@ -1482,6 +1778,25 @@ function updateObjectsList(scope, listName) {
     var listData = new Array();
     for (var item in listItems) {
         var verbs = (listName == "inventory") ? listItems[item].inventoryverbs : listItems[item].displayverbs;
+        if (verbs != undefined) {
+            var verbsList = verbs.join("/");
+        }
+        else {
+            var verbsList = "";
+        }
+        listData.push(GetDisplayAlias(listItems[item]) + ":" + verbsList);
+    }
+    updateList(listName, listData);
+} */
+
+function updateObjectsList(scope, listName) {
+    var listItems = window[scope]();
+    if (scope == "GetPlacesObjectsList") {
+        listItems = listItems.concat(ScopeExits());
+    }
+    var listData = new Array();
+    for (var item in listItems) {
+        var verbs = GetDisplayVerbs(listItems[item]);
         if (verbs != undefined) {
             var verbsList = verbs.join("/");
         }
@@ -1725,6 +2040,7 @@ function listadd(list, item) {
 }
 
 function listremove(list, item) {
+    if (!Array.isArray(list)) { console.log ("List does not exist."); return; }; /* this line altered by KV 20240803 */
     var index = list.indexOf(item);
     if (index != -1) {
         if (currentTransaction != undefined) {
@@ -1769,6 +2085,8 @@ function dictionaryremove(dictionary, key) {
     delete dictionary[key];
     markModified(dictionary);
 }
+
+
 
 function request(requestType, data) {
     switch (requestType) {
@@ -1815,13 +2133,21 @@ function request(requestType, data) {
             setPanelContents(data);
             break;
         case "Log":
+		    console.log(data);
             break;
         case "Speak":
+            break;
+        case "RestartGame":
+            uiDoRestart();
+            break;
+        case "RequestSave":
+            msg("This game automatically saves after each successful turn.");
             break;
         default:
             throw "Request not supported: " + requestType + "; " + data;
     }
 }
+
 
 function requestShowHide_GetElement(element) {
     switch (element) {
@@ -1895,17 +2221,81 @@ function undo() {
 
 function runscriptattribute2(object, attribute) {
     var fn = GetAttribute(object, attribute);
-    fn.call(object);
+    fn.call(object, attribute);
 }
 
+/*
 function runscriptattribute3(object, attribute, parameters) {
+	if (attribute === "scopebackdrop"){
+		game.scopebackdropitems = parameters.items;
+	}
+    var fn = GetAttribute(object, attribute);
+    fn.call(object, parameters);
+}
+*/
+
+function runscriptattribute3(object, attribute, parameters) { /* scopebackdrop fix */
+	if (attribute === "scopebackdrop"){
+		game.scopebackdropitems = parameters.items;
+	}
+	//clog ("runscriptattribute3 parameters:");
+	//clog (parameters);
     var fn = GetAttribute(object, attribute);
     fn.call(object, parameters);
 }
 
+/*
 function invoke(script, parameters) {
     if (parameters) {
-        script.apply(null, [parameters["result"]]);
+        if (parameters["this"]) {
+            script.apply(parameters["this"], [parameters]);
+        } else if (parameters["section"]) {
+            script.apply(null, [parameters["section"], parameters["data"]]);
+        } else if (parameters["result"]) {
+            script.apply(null, [parameters["result"]], parameters);
+        } else {
+            console.log("invoke is blindly sending 'parameters'");
+            console.log(parameters);
+            script.apply(null, parameters);
+        }
+    } else {
+        script();
+    }
+}
+*/
+
+function invoke(script, parameters) { 
+/* Fix for Quest 5.8.0 Build 5.8.7753.35198 */
+    /*var clog = console.log;
+	clog("invoke script:");
+	clog(script.toString());
+	if (script.toString() === 'function() { set(_obj311, "textprocessorcommandresult", ProcessTextCommand_Popup (section, data)); }'){
+		clog("IT'S POPUP!");
+	}*/
+	if (parameters) {
+		/*clog("invoke parameters:");
+		clog(parameters);
+		clog("Doing forEach..");
+		function findParams(key){
+			clog("key:");
+			clog(key);
+			clog("parameters[key]");
+			clog(parameters[key]);
+		}
+		Object.keys(parameters).forEach(findParams);*/
+        if (parameters["this"]) {
+            script.apply(parameters["this"], [parameters]);
+        } else if (parameters["section"]) {
+			var sectionVar = parameters["section"];
+			var dataVar = parameters["data"];
+            script.apply(section = sectionVar, data=dataVar);
+        } else if (parameters["result"]) {
+            script.apply(null, [parameters["result"]], parameters);
+        } else {
+            console.log("invoke is blindly sending 'parameters':");
+            console.log(parameters);
+            script.apply(null, parameters);
+        }
     } else {
         script();
     }
@@ -1939,6 +2329,7 @@ function set(object, attribute, value, runscript) {
     }
 }
 
+// modded to run onexit scripts
 function objectMoved(object, oldParent, newParent) {
     if (object.elementtype == "object" && object.type == "object") {
         if (oldParent) {
@@ -1947,6 +2338,12 @@ function objectMoved(object, oldParent, newParent) {
                 throw "Object wasn't in room!";
             }
             oldParent["_children"].splice(idx, 1);
+            if (object == GetObject("game").pov) {
+                if (HasAttribute(oldParent, "onexit")) {
+                    runscriptattribute2(oldParent, "onexit");
+                    //console.log("RUNNING");
+                }
+            }
         }
         if (newParent) {
             if (!newParent["_children"]) {
@@ -2045,6 +2442,94 @@ function getinput_async(callback) {
 function create(name) {
     createInternal(name, allObjects, GetObject("defaultobject"), "object");
 }
+function create_withtype(name, type) {
+    createInternal(name, allObjects, GetObject("defaultobject"), "object");
+    addTypeToObject(GetObject(name), GetObject(type))
+}
+function ShallowClone(name) {
+    // The 'name' variable is actually an object.
+    if (!name) return false;
+    //console.log(name);
+    // Declare this as false, assuming the object has no child objects. 
+    var hasKids = false;
+    // Declare this for any children while cloning
+    var protos = [];
+    // Declare this for any clones of children
+    var newkids = [];
+    // QuestJS has a '_children' attribute which points to the object's child objects
+    if (HasAttribute(name, "_children")) {
+        //console.log(name.name + " has child objects"); // Let me know what's going on!
+        if (GetDirectChildren(name).length > 0) {
+            hasKids = true;
+            // There are children, so point this array to that attribute
+            protos = name["_children"];
+            // Back it up again, just to be safe
+            //name.kidsBak = name["_children"];
+            // Clear it out, to avoid recursion errors while setting the clone's attributes
+            name["_children"] = [];
+            // Move children to game object while cloning
+            //protos.forEach(function (o) {
+                //MoveObject(o, GetObject("game"));
+            //});
+        }
+    }
+    //console.log("STILL GOING"); // This is just to make sure something hasn't gone wrong!
+    //console.log(name.name);
+    // This is how QuestJS avoids duplicate object names.
+    var clonename = GetUniqueElementName(name.name).replace(/dynid/, "");
+    // And we finally create a blank object
+    create(clonename);
+    // Just like Quest, we must declare a variable which points to the actual object
+    var newObject = GetObject(clonename);
+    //console.log(newObject);  // Just to make sure things are in order
+    // Get all the attribute names of the prototype
+    var atts = GetAttributeNames(name);
+    for (var att in name) {
+        //console.log(att);  // Just to see what is going on!
+        // Make sure the attribute exists
+        if (name != undefined && att != undefined && name[att] != undefined) {
+            // Make sure the attribute isn't either of the names
+            if (att != 'name' && att != '_js_name') {
+                //console.log(name[att]);  // Just to see what is going on!
+                // Copy the attribute from the prototype to the clone
+                set(newObject, att, name[att]);
+            }
+        }
+    }
+    //console.log(newObject.name+" is set up!");  // Just to see what is going on!
+    if (hasKids) {
+        // Move children back to the prototype
+        protos.forEach(function (o) {
+            MoveObject(o, name);
+        });
+        // We had child objects in the prototype, so we need to clone them and move them into the main clone
+        for (var kid in protos) {
+            var nclone = CloneObjectAndMove(protos[kid], newObject);
+            //console.log(nclone);
+        }
+        // Set the prototype's attribute back to it's original state
+        //name["_children"] = name.kidsBak;
+        // Delete the backup attribute
+        //name.kidsBak = null;
+    }
+    return newObject;
+}
+
+
+function ObjectListSort(list) {
+    return list.sort();
+}
+
+function IsInt(data) {
+    return (/^\d+$/.test(data));
+}
+
+function Chr(data) {
+    return String.fromCharCode(data);
+}
+function Asc(data) {
+    return data.charCodeAt(0);
+}
 
 function createexit(name, from, to) {
     var newExit = createInternal(getUniqueId(), allExits, GetObject("defaultexit"), "exit");
@@ -2131,6 +2616,7 @@ function addTypeToObject_NoLog(object, type) {
 var destroyedObjects = new Array();
 
 function destroy(name) {
+    MoveObject(GetObject(name), GetObject("game"));
     destroyedObjects.push(name);
     destroyObject(GetObject(name));
 }
@@ -2243,7 +2729,8 @@ function getElement(name) {
     return elementsNameMap[name];
 }
 
-function setGameWidth() {
+function setGameWidth(size) {
+    $("#gameContent").width(size+"px");
 }
 
 function setGamePadding() {
@@ -2306,6 +2793,11 @@ function LengthOf(input) {
 function StartsWith(input, text) {
     return input.indexOf(text) == 0;
 }
+
+function EndsWith(input, text) {
+    return input.endsWith(text);
+}
+
 
 function LCase(text) {
     return text.toLowerCase();
@@ -2399,17 +2891,76 @@ function Populate(regexString, input, cacheID) {
 
 function GetRegexNamedGroups(matches) {
     var result = new Array();
+    //console.log("Matches:", matches);
+
+    // Handle the case when matches is an array
+    if (Array.isArray(matches)) {
+        for (var i = 0; i < matches.length; i++) {
+            var prop = matches[i];
+            if (prop !== undefined) {
+                //console.log("Checking array element:", prop);
+                if (StartsWith(prop, "object") || 
+                    prop.indexOf("_map_object") !== -1 || 
+                    StartsWith(prop, "text") || 
+                    prop.indexOf("_map_text") !== -1 || 
+                    StartsWith(prop, "exit") || 
+                    prop.indexOf("_map_exit") !== -1 || 
+                    StartsWith(prop, "before") || 
+                    StartsWith(prop, "padding") || 
+                    StartsWith(prop, "sep") || 
+                    StartsWith(prop, "places") || 
+                    StartsWith(prop, "after")) {
+                    result.push(prop);
+                    //console.log("Array element added:", prop);
+                }
+            } else {
+                //console.log("Array element is undefined.");
+            }
+        }
+    }
+
+    // Handle the case when matches is an object
+    if (typeof matches === 'object') {
+        for (var prop in matches) {
+            if (matches.hasOwnProperty(prop) && matches[prop] !== undefined) {
+                //console.log("Checking object property:", prop);
+                if (StartsWith(prop, "object") || 
+                    prop.indexOf("_map_object") !== -1 || 
+                    StartsWith(prop, "text") || 
+                    prop.indexOf("_map_text") !== -1 || 
+                    StartsWith(prop, "exit") || 
+                    prop.indexOf("_map_exit") !== -1 || 
+                    StartsWith(prop, "before") || 
+                    StartsWith(prop, "padding") || 
+                    StartsWith(prop, "sep") || 
+                    StartsWith(prop, "places") || 
+                    StartsWith(prop, "after")) {
+                    result.push(prop);
+                    //console.log("Object property added:", prop);
+                }
+            } else {
+                //console.log("Object property is undefined or not owned.");
+            }
+        }
+    }
+
+    //console.log("Result:", result);
+    return result;
+}
+
+/*function GetRegexNamedGroups(matches) {
+    var found = false;
+    var result = new Array();
     for (var prop in matches) {
         if (matches.hasOwnProperty(prop)) {
-            if (StartsWith(prop, "object") || prop.indexOf("_map_object") != -1
-             || StartsWith(prop, "text") || prop.indexOf("_map_text") != -1
-             || StartsWith(prop, "exit") || prop.indexOf("_map_exit") != -1) {
+            if (StartsWith(prop, "before") || StartsWith(prop, "padding") || StartsWith(prop, "sep") || StartsWith(prop, "places") || StartsWith(prop, "after") || prop.indexOf("_map_object") != -1 || StartsWith(prop, "text") || prop.indexOf("_map_text") != -1 || StartsWith(prop, "exit") || prop.indexOf("_map_exit") != -1) {
+                found = true;
                 result.push(prop);
             }
         }
     }
     return result;
-}
+}*/
 
 function GetAttribute(element, attribute) {
     attribute = attribute.replace(/ /g, "___SPACE___");
@@ -2625,6 +3176,10 @@ function DictionaryCount(dictionary) {
     return count;
 }
 
+function NewList(){
+	return [];
+}
+
 function ListCombine(list1, list2) {
     return list1.concat(list2);
 }
@@ -2777,6 +3332,7 @@ function IsGameRunning() {
 }
 
 function IsDefined(variable) {
+	//TODO
     return true;
 }
 
@@ -2796,9 +3352,88 @@ function DoesInherit(obj, type) {
     return ListContains(obj._types, type);
 }
 
-function Floor(n) {
-    return Math.floor(n);
+
+
+//Added by KV 10042017
+function setCss(element, cssString) {
+  el = $(element);
+  ary = cssString.split(";");
+  for (i = 0; i < ary.length; i++) {
+    ary2 = ary[i].split(':');
+    el.css(ary2[0], ary2[1]);
+  }
 }
+
+
+function Sin(int) {
+    return Math.sin(int);
+}
+function Abs(int) {
+    return Math.abs(int);
+}
+function Acos(val) {
+    return Math.acos(val);
+}
+function Asin(val) {
+    return Math.asin(val);
+}
+function Atan(val) {
+    return Math.atan(val);
+}
+function Cos(val) {
+    return Math.cos(val);
+}
+function Exp(val) {
+    return Math.exp(val);
+}
+function Log(val) {
+    return Math.log(val);
+}
+function Log10(val) {
+    return Math.log10(val);
+}
+function Sinh(val) {
+    return Math.sinh(val);
+}
+function Sqrt(val) {
+    return Math.sqrt(val);
+}
+function Tan(val) {
+    return Math.tan(val);
+}
+function Tanh(val) {
+    return Math.tanh(val);
+}
+function Ceiling(val) {
+    return Math.ceil(val);
+}
+function Floor(val) {
+    return Math.floor(val);
+}
+function Round(val) {
+    return Math.round(val);
+}
+
+const Pi = Math.PI;
+
+function abs(int){
+	return Math.abs(int);
+};
+function pow(base, exp) {
+    return Math.pow(base, exp);
+};
+function floor(val) {
+    return Math.floor(val);
+};
+
+function addTextAndScroll(text) { addText('<br/>' + text); scrollToEnd(); };
+
+var msg = addTextAndScroll;
+
+function whereAmI() {
+    ASLEvent("WhereAmI", platform);
+}
+var platform = "webplayer";
 
 var templates = new Object();
 var dynamicTemplates = new Object();
@@ -2814,3 +3449,228 @@ var embeddedHtml = new Object();
 var objectsNameMap = new Object();
 var elementsNameMap = new Object();
 
+function showTranscript() {
+    document.write("<button onclick='window.history.back();'>BACK</button><br/><br/>" + transcriptArr + "<br/><br/><button onclick='window.history.back();'>BACK</button>");
+}
+
+function RequestSave() {
+    msg("This game automatically saves after each successful turn.");
+}
+
+function addScript(text) {
+    $('body').prepend(text);
+}
+
+function setCommands(s, colour) {
+    if (arguments.length == 2) commandColour = colour;
+    ary = s.split(";");
+    el = $('#commandPaneHeading');
+    el.empty();
+    for (i = 0; i < ary.length; i++) {
+        ary2 = ary[i].split(":");
+        comm = ary2[0];
+        commLower = ary2[0].toLowerCase().replace(/ /g, "_");
+        commComm = (ary2.length == 2 ? ary2[1] : ary2[0]).toLowerCase();
+        //alert("ary[i]=" + ary[i] + ", Comm=" + comm + ", commComm=" + commComm + ", ary2[0].length=" + ary2.length);
+        el.append(' <span id="' + commLower + '_command_button"  class="accordion-header-text" style="padding:5px;"><a id="verblink' + commLower + '" class="cmdlink commandlink" style="text-decoration:none;color:' + commandColour + ';font-size:12pt;" data-elementid="" data-command="' + commComm + '">' + comm + '</a></span> ');
+    }
+}
+var commandColour = "black";
+
+
+function requestsave() {
+    // Do nothing.
+}
+
+function requestspeak(data) {
+    request("Speak", data);
+}
+
+var evalBak = eval
+
+eval = function(data){
+    try {
+        return evalBak(data);
+    } catch (e) {
+        for (o in allObjects){
+            if(data.indexOf(allObjects[o].name) > -1){
+                data = data.split(allObjects[o].name).join("GetObject(\""+allObjects[o].name+"\")");
+            }
+        }
+        return evalBak(data);
+    }
+}
+
+function showPopup(title, text) {
+    $('#msgboxCaption').html(text);
+
+    var msgboxOptions = {
+        modal: true,
+        autoOpen: false,
+        title: title,
+        buttons: [
+			{
+			    text: 'OK',
+			    click: function () { $(this).dialog('close'); }
+			},
+        ],
+        closeOnEscape: false,
+    };
+
+    $('#msgbox').dialog(msgboxOptions);
+    $('#msgbox').dialog('open');
+};
+
+function showPopupCustomSize(title, text, width, height) {
+    $('#msgboxCaption').html(text);
+
+    var msgboxOptions = {
+        modal: true,
+        autoOpen: false,
+        title: title,
+        width: width,
+        height: height,
+        buttons: [
+			{
+			    text: 'OK',
+			    click: function () { $(this).dialog('close'); }
+			},
+        ],
+        closeOnEscape: false,
+    };
+
+    $('#msgbox').dialog(msgboxOptions);
+    $('#msgbox').dialog('open');
+};
+
+function showPopupFullscreen(title, text) {
+    $('#msgboxCaption').html(text);
+
+    var msgboxOptions = {
+        modal: true,
+        autoOpen: false,
+        title: title,
+        width: $(window).width(),
+        height: $(window).height(),
+        buttons: [
+			{
+			    text: 'OK',
+			    click: function () { $(this).dialog('close'); }
+			},
+        ],
+        closeOnEscape: false,
+    };
+
+    $('#msgbox').dialog(msgboxOptions);
+    $('#msgbox').dialog('open');
+};
+
+function GetFileData(file) {
+    throw ("FIXME");
+};
+function Clone(name) {
+    // The 'name' variable is actually an object.
+    if (!name) return false;
+    //console.log(name);
+    // Declare this as false, assuming the object has no child objects. 
+    var hasKids = false;
+    // Declare this for any children while cloning
+    var protos = [];
+    // Declare this for any clones of children
+    var newkids = [];
+    // QuestJS has a '_children' attribute which points to the object's child objects
+    if (HasAttribute(name, "_children")) {
+        //console.log(name.name + " has child objects"); // Let me know what's going on!
+        if (GetDirectChildren(name).length > 0) {
+            hasKids = true;
+            // There are children, so point this array to that attribute
+            protos = name["_children"];
+            // Back it up again, just to be safe
+            //name.kidsBak = name["_children"];
+            // Clear it out, to avoid recursion errors while setting the clone's attributes
+            name["_children"] = [];
+            // Move children to game object while cloning
+            //protos.forEach(function (o) {
+                //MoveObject(o, GetObject("game"));
+            //});
+        }
+    }
+    //console.log("STILL GOING"); // This is just to make sure something hasn't gone wrong!
+    //console.log(name.name);
+    // This is how QuestJS avoids duplicate object names.
+    var clonename = GetUniqueElementName(name.name).replace(/dynid/, "");
+    // And we finally create a blank object
+    create(clonename);
+    // Just like Quest, we must declare a variable which points to the actual object
+    var newObject = GetObject(clonename);
+    //console.log(newObject);  // Just to make sure things are in order
+    // Get all the attribute names of the prototype
+    var atts = GetAttributeNames(name);
+    for (var att in name) {
+        //console.log(att);  // Just to see what is going on!
+        // Make sure the attribute exists
+        if (name != undefined && att != undefined && name[att] != undefined) {
+            // Make sure the attribute isn't either of the names
+            if (att != 'name' && att != '_js_name') {
+                //console.log(name[att]);  // Just to see what is going on!
+                // Copy the attribute from the prototype to the clone
+                set(newObject, att, name[att]);
+            }
+        }
+    }
+    //console.log(newObject.name+" is set up!");  // Just to see what is going on!
+    if (hasKids) {
+        // Move children back to the prototype
+        protos.forEach(function (o) {
+            MoveObject(o, name);
+        });
+        // We had child objects in the prototype, so we need to clone them and move them into the main clone
+        for (var kid in protos) {
+            var nclone = CloneObjectAndMove(protos[kid], newObject);
+            console.log(nclone);
+        }
+        // Set the prototype's attribute back to it's original state
+        //name["_children"] = name.kidsBak;
+        // Delete the backup attribute
+        //name.kidsBak = null;
+    }
+    return newObject;
+}
+
+/*function GetRegexNamedGroups(matches) {
+    var result = new Array();
+    for (var prop in matches) {
+        if (matches.hasOwnProperty(prop)) {
+                result.push(prop);
+        }
+    }
+    return result;
+}*/
+
+function ScopeReachableNotHeldForRoom(room)
+{
+var result = NewObjectList();
+var list_obj = GetAllChildObjects(room);
+var list_obj_isarray = (Object.prototype.toString.call(list_obj) === '[object Array]');
+for (var iterator_obj in list_obj) {
+var obj = list_obj_isarray ? list_obj[iterator_obj] : iterator_obj;
+if (list_obj_isarray || iterator_obj!="__dummyKey") { if (ContainsReachable(room, obj) && obj != _obj323.pov && !(Contains(_obj323.pov, obj))) {
+listadd (result, obj);
+} }
+}
+if (HasScript(_obj323, "scopebackdrop")) {
+var dict = NewDictionary();
+dictionaryadd (dict, "items", result);
+set(_obj323, "scopebackdropitems", result);
+runscriptattribute3 (_obj323, "scopebackdrop", dict);
+}
+return (result);
+}
+
+/*
+    END OF DEFAULT FILE
+*/
+
+function setCustomStatus(){
+//do nothing
+}

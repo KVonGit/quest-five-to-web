@@ -1,0 +1,173 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\compiler\\gamesaver\\fieldsaver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\gamesaver\\fieldsaver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|c:\\users\\kv\\documents\\github\\questconverter\\compiler\\gamesaver\\elementsavers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\gamesaver\\elementsavers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|c:\\users\\kv\\documents\\github\\questconverter\\compiler\\scripts\\functioncallscript.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\scripts\\functioncallscript.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\compiler\\game.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\game.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\compiler\\gameloader\\gameloader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\gameloader\\gameloader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\compiler\\compiler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\compiler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5A25FE48-0BE2-4B58-936C-3982B2EF8483}|QuestCompiler\\QuestCompiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\questcompiler\\properties\\assemblyinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5A25FE48-0BE2-4B58-936C-3982B2EF8483}|QuestCompiler\\QuestCompiler.csproj|solutionrelative:questcompiler\\properties\\assemblyinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5A25FE48-0BE2-4B58-936C-3982B2EF8483}|QuestCompiler\\QuestCompiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\questcompiler\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5A25FE48-0BE2-4B58-936C-3982B2EF8483}|QuestCompiler\\QuestCompiler.csproj|solutionrelative:questcompiler\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\compiler\\properties\\assemblyinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64131651-5158-493D-A1CF-27C7575F2653}|Compiler\\Compiler.csproj|solutionrelative:compiler\\properties\\assemblyinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "FunctionCallScript.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\Scripts\\FunctionCallScript.cs",
+              "RelativeDocumentMoniker": "Compiler\\Scripts\\FunctionCallScript.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\Scripts\\FunctionCallScript.cs",
+              "RelativeToolTip": "Compiler\\Scripts\\FunctionCallScript.cs",
+              "ViewState": "AQIAAE4AAAAAAAAAAAAmwFoAAAAXAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-09T12:12:19.344Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "GameLoader.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\GameLoader\\GameLoader.cs",
+              "RelativeDocumentMoniker": "Compiler\\GameLoader\\GameLoader.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\GameLoader\\GameLoader.cs",
+              "RelativeToolTip": "Compiler\\GameLoader\\GameLoader.cs",
+              "ViewState": "AQIAAHAAAAAAAAAAAAAAwHkAAAApAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-08T00:06:33.075Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "FieldSaver.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\GameSaver\\FieldSaver.cs",
+              "RelativeDocumentMoniker": "Compiler\\GameSaver\\FieldSaver.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\GameSaver\\FieldSaver.cs",
+              "RelativeToolTip": "Compiler\\GameSaver\\FieldSaver.cs",
+              "ViewState": "AQIAAFIAAAAAAAAAAAAAwF4AAAAyAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-07T17:38:14.001Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Compiler.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\Compiler.cs",
+              "RelativeDocumentMoniker": "Compiler\\Compiler.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\Compiler.cs",
+              "RelativeToolTip": "Compiler\\Compiler.cs",
+              "ViewState": "AQIAAKoAAAAAAAAAAAAAAK0AAABAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-07T14:28:58.306Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "game.js",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\game.js",
+              "RelativeDocumentMoniker": "Compiler\\game.js",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\game.js",
+              "RelativeToolTip": "Compiler\\game.js",
+              "ViewState": "AQIAAF4IAAAAAAAAAAAAwGcIAAAQAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2024-08-07T14:27:26.154Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ElementSavers.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\GameSaver\\ElementSavers.cs",
+              "RelativeDocumentMoniker": "Compiler\\GameSaver\\ElementSavers.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\GameSaver\\ElementSavers.cs",
+              "RelativeToolTip": "Compiler\\GameSaver\\ElementSavers.cs",
+              "ViewState": "AQIAAJAAAAAAAAAAAAAcwFAAAAATAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-08T00:54:36.823Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "AssemblyInfo.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\QuestCompiler\\Properties\\AssemblyInfo.cs",
+              "RelativeDocumentMoniker": "QuestCompiler\\Properties\\AssemblyInfo.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\QuestCompiler\\Properties\\AssemblyInfo.cs",
+              "RelativeToolTip": "QuestCompiler\\Properties\\AssemblyInfo.cs",
+              "ViewState": "AQIAACoAAAAAAAAAAIBJwDUAAAAfAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-07T14:25:47.605Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\QuestCompiler\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "QuestCompiler\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\QuestCompiler\\MainWindow.xaml.cs",
+              "RelativeToolTip": "QuestCompiler\\MainWindow.xaml.cs",
+              "ViewState": "AQIAANIAAAAAAAAAAAAqwCUAAAAMAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-07T15:07:28.399Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AssemblyInfo.cs",
+              "DocumentMoniker": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\Properties\\AssemblyInfo.cs",
+              "RelativeDocumentMoniker": "Compiler\\Properties\\AssemblyInfo.cs",
+              "ToolTip": "C:\\Users\\kv\\Documents\\GitHub\\QuestConverter\\Compiler\\Properties\\AssemblyInfo.cs",
+              "RelativeToolTip": "Compiler\\Properties\\AssemblyInfo.cs",
+              "ViewState": "AQIAAA8AAAAAAAAAAIBJwCIAAAAfAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-07T14:18:53.42Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
