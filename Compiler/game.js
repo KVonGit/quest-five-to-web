@@ -3,7 +3,7 @@ Quest Compiler
 KVMod
 version 6.5
 
-game.js version 20240809.0433
+game.js version 20240813.2242
 */
 
 var selectSizeWithoutStatus = 8;
@@ -1600,44 +1600,52 @@ function JsHideOutputSection(name) {
     }, 250);
 }
 
+
+/*
+	Modified by KV 08-13-2024, copied directly from https://github.com/textadventures/quest/blob/63f159054e088a40b3b22ed1954392c4d3cb9974/WebPlayer/playercore.js#L1031C1-L1073C2
+*/
+
 function getCSSRule(ruleName, deleteFlag) {
-    /*
-    disabled by kv 20240730 to avoid this error:
-       Uncaught DOMException: CSSStyleSheet.cssRules getter: Not allowed to access cross-origin stylesheet
-    */
-    console.log("MESSAGE FROM KV: getCSSRule bypassed...");
-/* ruleName = ruleName.toLowerCase();
+    ruleName = ruleName.toLowerCase();
     if (document.styleSheets) {
         for (var i = 0; i < document.styleSheets.length; i++) {
             var styleSheet = document.styleSheets[i];
             var ii = 0;
             var cssRule = false;
-            do {
-                if (styleSheet.cssRules) {
-                    cssRule = styleSheet.cssRules[ii];
-                } else if (styleSheet.rules) {
-                    cssRule = styleSheet.rules[ii];
-                }
-                if (cssRule) {
-                    if (typeof cssRule.selectorText != "undefined") {
-                        if (cssRule.selectorText.toLowerCase() == ruleName) {
-                            if (deleteFlag == 'delete') {
-                                if (styleSheet.cssRules) {
-                                    styleSheet.deleteRule(ii);
+            try {
+                do {
+                    if (styleSheet.cssRules) {
+                        cssRule = styleSheet.cssRules[ii];
+                    } else if (styleSheet.rules) {
+                        cssRule = styleSheet.rules[ii];
+                    }
+                    if (cssRule) {
+                        if (typeof cssRule.selectorText != "undefined") {
+                            if (cssRule.selectorText.toLowerCase() == ruleName) {
+                                if (deleteFlag == 'delete') {
+                                    if (styleSheet.cssRules) {
+                                        styleSheet.deleteRule(ii);
+                                    } else {
+                                        styleSheet.removeRule(ii);
+                                    }
+                                    return true;
                                 } else {
-                                    styleSheet.removeRule(ii);
+                                    return cssRule;
                                 }
-                                return true;
-                            } else {
-                                return cssRule;
                             }
                         }
                     }
+                    ii++;
+                } while (cssRule)
+            } catch (e) {
+                // Firefox throws a SecurityError if you try reading
+                // a cross-domain stylesheet
+                if (e.name !== "SecurityError") {
+                    throw e;
                 }
-                ii++;
-            } while (cssRule)
+            }
         }
-    } */
+    }
     return false;
 }
 
@@ -2962,9 +2970,13 @@ function GetRegexNamedGroups(matches) {
     return result;
 }*/
 
-function GetAttribute(element, attribute) {
-    attribute = attribute.replace(/ /g, "___SPACE___");
-    return element[attribute];
+function GetAttribute(object, attribute) {
+    // Check if the object has the attribute
+    if (object && object.hasOwnProperty(attribute)) {
+        return object[attribute];
+    }
+    // If attribute is not found, return undefined or handle it as needed
+    return undefined;
 }
 
 function GetBoolean(element, attribute) {
@@ -3667,10 +3679,69 @@ runscriptattribute3 (_obj323, "scopebackdrop", dict);
 return (result);
 }
 
+/* -- ATTEMPTING TO FIX setCustomStatus() -- */
+
+function setPanes(fore, back, secFore, secBack, highlight) {
+  if (arguments.length == 2) {
+    secFore = back;
+    secBack = fore;
+  }
+  if (arguments.length < 5) {
+    highlight = 'orange'
+  }
+  commandColour = fore;
+  for (i = 0; i < elements.length; i++) {
+    setElement(elements[i], fore, back);
+  }
+  for (i = 0; i < dirs.length; i++) {
+    setElement(dirs[i], fore, back);
+  }
+
+  var head = $('head');
+  head.append('<style>.ui-button-text { color: ' + fore + ';}</style>');
+  head.append('<style>.ui-state-active { color: ' + fore + ';}</style>');
+  head.append('<style>.ui-widget-content { color: ' + fore + ';}</style>');
+  head.append('<style>.ui-widget-header .ui-state-default { background-color: ' + secBack + ';}</style>');
+  head.append('<style>.ui-selecting { color: ' + secFore + '; background-color: ' + highlight + ';}</style>');
+  head.append('<style>.ui-selected { color: ' + secFore + '; background-color: ' + secBack + ';}</style>');
+
+  //$('.ui-button-text').css('color', fore);
+  //$('.ui-state-active').css('color', fore);
+  //$('.ui-widget-content').css('color', fore);
+  
+}
+
+elements = [
+  '#statusVarsLabel', '#statusVarsAccordion',// '#statusVars',
+  '#inventoryLabel', '#inventoryAccordion', '#inventoryAccordion.ui-widget-content',
+  '#placesObjectsLabel', '#placesObjectsAccordion', '#placesObjectsAccordion.ui-widget-content',
+  '#compassLabel', '#compassAccordion', '.ui-button', //'.ui-button-text',
+  '#commandPane', '#customStatusPane'
+];
+
+dirs = ['N', 'E', 'S', 'W', 'NW', 'NE', 'SW', 'SE', 'U', 'In', 'D', 'Out'];
+
+commandColour = 'orange'
+
+function setElement(name, fore, back) {
+  el = $(name);
+  el.css('background', back);
+  el.css('color', fore);
+  el.css('border', 'solid 1px ' + fore);
+  if (endsWith(name, "Accordion")) {
+    el.css('border-top', 'none');
+  }
+}
+
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+function setCustomStatus(s) {
+    el = $('#customStatusPane');
+    el.html(s);
+}
+
 /*
     END OF DEFAULT FILE
 */
-
-function setCustomStatus(){
-//do nothing
-}
