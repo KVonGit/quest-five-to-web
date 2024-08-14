@@ -167,7 +167,7 @@ namespace TextAdventures.Quest
             System.IO.Directory.CreateDirectory(outputFolder);
             string indexHtm = Copy("index.htm", _resourcesFolder, outputFolder, options, loader, substitutionText, debugMode: debugMode, outputFilename: "index.html");
             Copy("style.css", _resourcesFolder, outputFolder, options, loader, substitutionText);
-            Copy("jquery-ui-1.8.16.custom.css", _resourcesFolder, outputFolder, options, loader, substitutionText);
+            Copy("jquery-ui*.css", _resourcesFolder, outputFolder, options, loader, substitutionText);
             Copy("game.js", _resourcesFolder, outputFolder, options, loader, substitutionText, debugMode);
             string jsFolder = System.IO.Path.Combine(_resourcesFolder, "js");
             string outputJsFolder = System.IO.Path.Combine(outputFolder, "js");
