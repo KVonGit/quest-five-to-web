@@ -211,6 +211,7 @@ max-width:20%;
 }
 .ui-accordion-header {
     background:black !important;
+	color:white !important;
     border: 1px solid gray !important;
     padding: 3px !important;
 }
