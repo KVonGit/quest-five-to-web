@@ -3,7 +3,7 @@ Quest Compiler
 KVMod
 version 6.5
 
-game.js version 20240813.2242
+game.js version 20240814.1555
 */
 
 var selectSizeWithoutStatus = 8;
@@ -3365,10 +3365,11 @@ function DoesInherit(obj, type) {
 }
 
 
-
 //Added by KV 10042017
+//Modified by KV 08-14-2024
 function setCss(element, cssString) {
   el = $(element);
+  cssString = cssString.replace("; ", ";"); //Allow spaces
   ary = cssString.split(";");
   for (i = 0; i < ary.length; i++) {
     ary2 = ary[i].split(':');
