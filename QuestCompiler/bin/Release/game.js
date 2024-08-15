@@ -3377,6 +3377,7 @@ function setCss(element, cssString) {
   }
 }
 
+
 function Sin(int) {
     return Math.sin(int);
 }
