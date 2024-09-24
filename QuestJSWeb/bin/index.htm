@@ -307,4 +307,15 @@
             </div>
         </div>
     </body>
+    <script>
+      // FIX BUGS IN CONVERTED GAMES
+      // ANYTHING HERE OVERRIDES THE CODE IN game.js
+        setTimeout(function(){
+          var showMenuBak = ShowMenu;
+          ShowMenu = function(){
+            showMenuBak(...arguments);
+            scrollToEnd();
+          };
+        }, 500);
+    </script>
 </html>

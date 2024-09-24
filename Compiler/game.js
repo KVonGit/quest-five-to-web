@@ -1,9 +1,9 @@
 /*
 Quest Compiler
 KVMod
-version 6.5
+version 6.5.1
 
-game.js version 20240814.1555
+game.js version 202409232330
 */
 
 var selectSizeWithoutStatus = 8;
@@ -93,7 +93,7 @@ function init() {
         set(GetObject("game"), "defaultfontsize", parseInt(newFontSize));
         saveGame();
     });
-	
+	  
     $(document).on("click", function () {
         if (_waitMode) {
             endWait();
@@ -140,7 +140,8 @@ function init() {
         $("#inventoryList").toggle();
     });
     $("#gamePanes").css("min-width", $("#gamePanes").width());
-
+    // fix to make compass button icons centred
+    $(".compassbutton span").css("left", "0.8em");
     worldmodelInitialise();
     if (!loadGame()) {
         worldModelBeginGame();
@@ -273,7 +274,9 @@ function endPause() {
 }
 
 function SetTimeout(time,todo){
-    setTimeout(eval(todo),time * 1000);
+    //setTimeout(eval(todo),time * 1000);
+    //SetTimeoutID (interval, "", script);
+    setTimeout(function(){eval(script);}, time*1000);
 }
 
 
@@ -610,6 +613,8 @@ function updateCompass(directions) {
     updateDir(directions, "D", _compassDirs[9]);
     updateDir(directions, "In", _compassDirs[10]);
     updateDir(directions, "Out", _compassDirs[11]);
+    // fix to make compass button icons centred
+    $(".compassbutton span").css("left", "0.8em");
 }
 
 function updateDir(directions, label, dir) {
@@ -621,6 +626,7 @@ function updateDir(directions, label, dir) {
         $("#cmdCompass" + label).button("enable");
         $("#cmdCompass" + label).removeClass("ui-state-disabled").removeClass("ui-button-disabled");
     }
+    
 }
 
 
@@ -701,7 +707,7 @@ function sendCommand(text) {
                 $("#moreBtn").click();
             }
             else if (text.trim().toLowerCase() == "transcript" || text.trim().toLowerCase() == "script") {
-                showTranscript();
+                showTranscripts();
             }
             else {
                 sendCommandInternal(text);
@@ -1370,7 +1376,7 @@ function setCommandBarStyle(style) {
     $("#txtCommand").attr("style", style);
     $("#txtCommand").width(width);
 }
-
+/*
 var transcriptArr = [];
 function addText(text) {
     if (_currentDiv == null) {
@@ -1379,6 +1385,23 @@ function addText(text) {
 	transcriptArr.push(text + '\n');
     _currentDiv.append(text);
     scrollToEnd();
+}
+*/
+// These variables added by KV for the transcript
+var transcriptEnabled = false;
+var transcriptProhibited = false;
+var transcriptName = "";
+
+// This function altered by KV for the transcript
+function addText(text) {
+    if (getCurrentDiv() == null) {
+        createNewDiv("left");
+    }
+    getCurrentDiv().append(text);
+    $("#divOutput").css("min-height", $("#divOutput").height());
+    if (transcriptEnabled && !transcriptProhibited) {
+      writeToTranscript(text);
+    }
 }
 
 
@@ -1504,6 +1527,58 @@ function clearScreen() {
         $("html,body").scrollTop(0);
     }, 100);
 }
+// Modified by KV to handle the scrollback feature
+// Changing saveClearedText to false by default, due to performance issues.
+var saveClearedText = false;
+// Authors can change noScrollback to true to disable the scrollback functions.
+var noScrollback = false;
+var clearedOnce = false;
+function clearScreen() {
+    if (!saveClearedText) {
+        $("#divOutput").css("min-height", 0);
+        $("#divOutput").html("");
+        createNewDiv("left");
+        beginningOfCurrentTurnScrollPosition = 0;
+        setTimeout(function () {
+            $("html,body").scrollTop(0);
+        }, 100);
+    } else {
+        $("#divOutput").append("<hr class='clearedAbove' />");
+        if (!clearedOnce) {
+            addText('<style>#divOutput > .clearedScreen { display: none; }</style>');
+        }
+        clearedOnce = true;
+        $('#divOutput').children().addClass('clearedScreen');
+        $('#divOutput').css('min-height', 0);
+        createNewDiv('left');
+        beginningOfCurrentTurnScrollPosition = 0;
+        setTimeout(function () {
+            $('html,body').scrollTop(0);
+        }, 100);
+    }
+}
+
+// Scrollback function added by KV
+
+/**
+ * The player can print the game's text or save as PDF.
+ * This will include cleared text if saveClearedText is set to true (saveClearedText is false by default).
+ * Setting noScrollback to true will disable this. (noScrollback is false by default)
+ */
+function printScrollback() {
+  if (noScrollback) return;
+  addText("<div id='scrollback-hider' style='display:none; color:black !important; background-color:white !important; font-family:sans-serif !important;background:white !important;text-align:left !important;'><div id='scrollbackdata'></div></div>");
+  $('#scrollbackdata').html($('#divOutput').html());
+  $("#scrollbackdata a").addClass("disabled");
+  setTimeout(function () {
+      $("#scrollbackdata a").addClass("disabled");
+  }, 1);
+  var iframe = document.createElement('iframe');
+  document.body.appendChild(iframe);
+  iframe.contentWindow.document.write($("#scrollbackdata").html());
+  iframe.contentWindow.print();
+  document.body.removeChild(iframe);
+};
 
 function keyPressCode(e) {
     var keynum
@@ -2274,39 +2349,29 @@ function invoke(script, parameters) {
 
 function invoke(script, parameters) { 
 /* Fix for Quest 5.8.0 Build 5.8.7753.35198 */
-    /*var clog = console.log;
-	clog("invoke script:");
-	clog(script.toString());
-	if (script.toString() === 'function() { set(_obj311, "textprocessorcommandresult", ProcessTextCommand_Popup (section, data)); }'){
-		clog("IT'S POPUP!");
-	}*/
 	if (parameters) {
-		/*clog("invoke parameters:");
-		clog(parameters);
-		clog("Doing forEach..");
-		function findParams(key){
-			clog("key:");
-			clog(key);
-			clog("parameters[key]");
-			clog(parameters[key]);
-		}
-		Object.keys(parameters).forEach(findParams);*/
-        if (parameters["this"]) {
-            script.apply(parameters["this"], [parameters]);
-        } else if (parameters["section"]) {
-			var sectionVar = parameters["section"];
-			var dataVar = parameters["data"];
-            script.apply(section = sectionVar, data=dataVar);
-        } else if (parameters["result"]) {
-            script.apply(null, [parameters["result"]], parameters);
-        } else {
-            console.log("invoke is blindly sending 'parameters':");
-            console.log(parameters);
-            script.apply(null, parameters);
-        }
+    
+    if (parameters["this"]) {
+        script.apply(parameters["this"], [parameters]);
+        
+    /*} else if (parameters["section"]) {
+        var sectionVar = parameters["section"];
+        var dataVar = parameters["data"];
+        script.apply(section = sectionVar, data=dataVar);*/
+        
+    } else if (parameters["result"]) {
+        script.apply(null, [parameters["result"]], parameters);
+        
     } else {
-        script();
+        function findParams(key){
+          window[key] = parameters[key];
+        }
+        Object.keys(parameters).forEach(findParams);
+        script.apply(null, parameters);
     }
+  } else {
+      script();
+  }
 }
 
 function error(message) {
@@ -2314,6 +2379,10 @@ function error(message) {
 }
 
 function set(object, attribute, value, runscript) {
+    if (typeof object === 'undefined'){
+      console.error("[game.js]: [set()]: 'object' is undefined. Exiting script!");
+      return;
+    }
     if (runscript === undefined) {
         runscript = true;
     }
@@ -3144,6 +3213,10 @@ function OverloadedFunctions() {
         params["object2"] = arg2;
         return dynamicTemplates[name](params);
     });
+    
+    addMethod(this, "DynamicTemplate", function (name) {
+        return (dynamicTemplates[name]());
+    });
 
     addMethod(this, "Eval", function (expression) {
         return eval(expression);
@@ -3345,7 +3418,8 @@ function IsGameRunning() {
 
 function IsDefined(variable) {
 	//TODO
-    return true;
+    //return true;
+    return (typeof variable != null);
 }
 
 function GetRandomInt(min, max) {
@@ -3461,10 +3535,6 @@ var objectDictionaryReferences = new Array();
 var embeddedHtml = new Object();
 var objectsNameMap = new Object();
 var elementsNameMap = new Object();
-
-function showTranscript() {
-    document.write("<button onclick='window.history.back();'>BACK</button><br/><br/>" + transcriptArr + "<br/><br/><button onclick='window.history.back();'>BACK</button>");
-}
 
 function RequestSave() {
     msg("This game automatically saves after each successful turn.");
@@ -3742,6 +3812,245 @@ function setCustomStatus(s) {
     el = $('#customStatusPane');
     el.html(s);
 }
+
+// Added by KV  
+
+function isMobilePlayer() {
+    return (platform === "mobile");
+};
+
+/**
+  * Added by KV for using the JS console for the Quest log when game.useconsolelog is set to true.
+  *
+  * @return {string} currentDateTime Time and date in format just like the Quest desktop log window
+*/
+function getTimeAndDateForLog(){
+  var date = new Date();
+  var currentDateTime = date.toLocaleString('en-US', { timeZoneName: 'short' }).replace(/,/g, "").replace(/[A-Z][A-Z][A-Z]/g, "");
+  return currentDateTime;
+};
+
+// TRANSCRIPT STUFF
+
+
+// These variables added by KV for the transcript
+var transcriptEnabled = false;
+var transcriptProhibited = false;
+var transcriptName = "";
+
+// This function altered by KV for the transcript
+function addText(text) {
+    if (getCurrentDiv() == null) {
+        createNewDiv("left");
+    }
+    getCurrentDiv().append(text);
+    $("#divOutput").css("min-height", $("#divOutput").height());
+    if (transcriptEnabled && !transcriptProhibited) {
+      writeToTranscript(text);
+    }
+}
+
+/**
+  * Added by KV
+  *
+  * This will write/append to a TXT document in Documents\Quest Transcripts
+  *  if using the desktop player and the the player has the transcript enabled
+  *  and if transcriptProhibited is not set to true (it is false by default).
+  *
+  * @param {string} text The string to be written to the file
+*/
+function writeToTranscript(text){
+  if (!transcriptProhibited && transcriptEnabled) {
+    var faker = document.createElement('div');
+    faker.innerHTML = text;
+    text = faker.innerHTML;
+    for (var key in Object.keys(faker.getElementsByTagName('img'))){
+      var elem = faker.getElementsByTagName('img')[key];
+      if (elem != null) {
+        var altProp = $(faker.getElementsByTagName('img')[key]).attr('alt') || "";
+        text = text.replace(elem.outerHTML, altProp) || text;
+      }
+    }
+    for (var key in Object.keys(faker.getElementsByTagName('area'))){
+      var elem = faker.getElementsByTagName('area')[key];
+      if (elem != null) {
+        var altProp = $(faker.getElementsByTagName('area')[key]).attr('alt') || "";
+        text = text.replace(elem.outerHTML, altProp) || text;
+      }
+    }
+    for (var key in Object.keys(faker.getElementsByTagName('input'))){
+      var elem = faker.getElementsByTagName('input')[key];
+      if (elem != null) {
+        var altProp = $(faker.getElementsByTagName('input')[key]).attr('alt') || "";
+        text = text.replace(elem.outerHTML, altProp) || text;
+      }
+    }
+    WriteToTranscript(transcriptName + "___SCRIPTDATA___" + $("<div>" + text.replace(/<br\/>/g,"@@@NEW_LINE@@@").replace(/<br>/g,"@@@NEW_LINE@@@").replace(/<br \/>/g,"@@@NEW_LINE@@@") + "</div>").text());
+  }
+}
+
+/**
+  * This will enable the transcript unless transcriptProhibited is set to true.
+  * 
+  * @param {name} text If this is defined, the transcriptName will be set to this.
+*/
+function enableTranscript(name){
+  if (transcriptProhibited) return;
+  transcriptName = name || transcriptName || gameName;
+  transcriptEnabled = true;
+}
+
+/**
+  * This will disable the transcript.
+  * 
+*/
+function disableTranscript(){
+  transcriptEnabled = false;
+}
+
+/**
+  * This will completely kill the transcript.
+  * 
+*/
+function killTranscript(){
+  transcriptProhibited = true;
+  disableTranscript();
+}
+
+/**
+  * Make it easy to control transcript settings from Quest.
+  * 
+  * @param {name} status The state the transcript will be set to.
+*/
+function setTranscriptStatus(status){
+  switch (status){
+    case "enabled":
+      var name = transcriptName || gameName;
+      enableTranscript(name);
+      break;
+    case "disabled":
+      disableTranscript();
+      break;
+    case "prohibited":
+    case "none":
+    case "killed":
+      killTranscript();
+      break;
+    case "allowed":
+      transcriptProhibited = false;
+  }
+}
+
+/**
+  * 
+/**
+  * This function was missing from the webplayer in Quest 5.8.0
+  * Leaving this here as a fallback
+  * 
+  * @param {string} text The line(s) of text being printed
+*/
+function SaveTranscript(text){
+  console.log("[QUEST]: SaveTranscript has been deprecated. Using writeToTranscript instead.");
+  writeToTranscript(text);  
+}
+
+
+/**
+  * Writes data to the transcript's item in localStorage.
+  *
+  * @param {string} text This is added to the transcriptData item in localStorage
+*/
+function WriteToTranscript(data){
+  if (transcriptProhibited){
+    // Do nothing.
+    return;
+  }
+  if (!isLocalStorageAvailable()){
+    console.error("There is no localStorage. Disabling transcript functionality.");
+    transcriptProhibited = true;
+    transcriptEnabled = false;
+    return;
+  }
+  var tName = transcriptName || "Transcript";
+  var overwrite = false;
+  if (data.indexOf("@@@OVERWRITEFILE@@@") > -1){
+    overwrite = true;
+    data = data.replace("@@@OVERWRITEFILE@@@", "");
+  }
+  if (data.indexOf("___SCRIPTDATA___") > -1) {
+    tName = data.split("___SCRIPTDATA___")[0].trim() || tName;
+    data = data.split("___SCRIPTDATA___")[1];
+  }
+  var oldData = "";
+  if (!overwrite){
+    oldData = localStorage.getItem("questtranscript-" + tName) || "";
+  }
+  localStorage.setItem("questtranscript-" + tName, oldData + data);
+}
+
+// Make sure localStorage is available, hopefully without throwing any errors!
+
+/* https://stackoverflow.com/a/16427747 */
+function isLocalStorageAvailable(){
+    var test = 'test';
+    try {
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
+
+var wnd;
+var tName = "";
+function openTranscript(tsn){
+  if (platform === "desktop") return;
+  if (!isLocalStorageAvailable()){
+    return;
+  }
+  var tscriptData = "";
+  tscriptData = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" + localStorage.getItem(tsn).replace(/@@@NEW_LINE@@@/g,"<br/>") || "No transcript data found.";
+  wnd = window.open("about:blank", "", "_blank");
+  wnd.document.write(tscriptData);
+  wnd.document.title = tsn.replace(/questtranscript-/,"") + " - Transcript";
+}
+
+var tscriptWindow;
+function showTranscripts(){
+  if (platform === "desktop") return;
+  if (!isLocalStorageAvailable()){
+    return;
+  }
+  var choices = [];
+  for (var e in localStorage) {
+    if (e.startsWith("questtranscript-")){
+      choices.push("<span id=\"" + e + "\" class=\"transcript-choice\"><a name=\"" + e + "\" href=\"#\" onclick=\"openTranscript(this.name);\" class=\"transcript-link\">" + e.replace(/questtranscript-/,"") + "</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\"  name=\"" + e + "\" onclick=\"removeTscript(this.name);\" class=\"transcript-delete\">DELETE</a></span>")
+    }
+  }
+  var choicesScript = "<script>var wnd;var tName = \"\";function openTranscript(tsn){ var tscriptData = \"\";  tscriptData = localStorage.getItem(tsn).replace(/@@@NEW_LINE@@@/g,\"<br/>\") || \"No transcript data found.\";  wnd = window.open(\"about:blank\", \"\", \"_blank\");  wnd.document.write(tscriptData);  wnd.document.title = tsn.replace(/questtranscript-/,\"\") + \" - Transcript\";};function removeTscript(tscript){console.log(tscript);var result = window.confirm(\"Delete this transcript?\");if (result){ localStorage.removeItem(tscript); document.getElementById(tscript).remove(); }};</script>";
+  tscriptWindow = window.open("about:blank", "", "_blank");
+  tscriptWindow.document.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><div id=\"main-holder\"><h3 id=\"your-transcripts\">Your Transcripts</h3><br/><div id=\"choices-holder\">" + choices.join("<br/>") + "</div></div>" + choicesScript);
+  tscriptWindow.document.title = tName + "Your Transcripts";
+}
+
+
+// END OF TRANSCRIPT FUNCTIONS
+
+/**
+  * Adding this to this file because it exists in desktopplayer.js
+  *
+  * It is doing nothing here if called, but it is here just so it is defined.
+  *
+  * @param {data} text This would print to the log file if this were the desktop player. It is ignored here.
+*/
+function WriteToLog(data){
+  /* Do nothing at all. */
+  return;
+}
+
+
 
 /*
     END OF DEFAULT FILE

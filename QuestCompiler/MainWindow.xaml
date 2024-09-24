@@ -1,7 +1,7 @@
 ﻿<Window x:Class="QuestCompiler.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Quest Compiler (Version 6.5)" Height="350" Width="800"
+        Title="Quest Compiler (Version 6.5.1)" Height="350" Width="800"
         TextOptions.TextFormattingMode="Display" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing" Icon="/QuestCompiler;component/Images/q2_48x48c.ico">
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo/>

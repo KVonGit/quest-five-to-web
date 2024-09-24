@@ -244,11 +244,15 @@ namespace TextAdventures.Quest
                         base.WriteAttribute(writer, element, attribute, string.Format("function(parameters) {{ {0} }}", savedScript), isFinal);
                     }
                     else
+                      
                     {
                         string parameters = string.Empty;
                         if (attribute.StartsWith("changed"))
                         {
                             parameters = "oldvalue";
+                        }
+                        else if (attribute.StartsWith("textprocessorcommands")) {
+                            parameters = "section, data";
                         }
                         base.WriteAttribute(writer, element, attribute, string.Format("function({1}) {{ {0} }}", savedScript, parameters), isFinal);
                     }

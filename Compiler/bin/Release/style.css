@@ -218,9 +218,6 @@ max-width:20%;
 .ui-accordion-content {
     border: 1px solid gray !important;
 }
-.ui-state-default .ui-icon { /*added by KV 20240815 */
-background-image: url("images/ui-icons_222222_256x240.png") !important;
-}
 @media only screen and (max-width: 1000px) {
     #gameContent{width: 100%; margin:0;}
     #gamePanes{display: none !important;}

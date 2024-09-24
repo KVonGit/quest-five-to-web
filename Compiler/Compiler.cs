@@ -183,6 +183,11 @@ namespace TextAdventures.Quest
             string outputImagesFolder = System.IO.Path.Combine(outputFolder, "images");
             System.IO.Directory.CreateDirectory(outputImagesFolder);
             Copy("*.png", imagesFolder, outputImagesFolder, options, loader, binary: true);
+            Copy("*.jpg", imagesFolder, outputImagesFolder, options, loader, binary: true);
+            Copy("*.jpeg", imagesFolder, outputImagesFolder, options, loader, binary: true);
+            Copy("*.gif", imagesFolder, outputImagesFolder, options, loader, binary: true);
+            Copy("*.bmp", imagesFolder, outputImagesFolder, options, loader, binary: true);
+            Copy("*.svg", imagesFolder, outputImagesFolder, options, loader, binary: true);
             return indexHtm;
         }
 
@@ -314,7 +319,7 @@ namespace TextAdventures.Quest
             }
         }
 
-        private static List<string> s_resourceExtensionsToCopy = new List<string> { ".jpg", ".jpeg", ".png", ".gif", ".wav", ".mp3" };
+        private static List<string> s_resourceExtensionsToCopy = new List<string> { ".jpg", ".jpeg", ".png", ".gif", ".wav", ".mp3", ".ogg", ".js", ".gif", ".bmp", ".svg", ".wav" };
 
         private void CopyResourcesToOutputFolder(string resourcesFolder, string outputFolder)
         {
