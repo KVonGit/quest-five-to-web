@@ -318,9 +318,9 @@
           };
         }, 500);
         var printCenteredBak = PrintCentered;
-        function PrintCentered(text){
+        var PrintCentered = function(text){
           printCenteredBak(text);
           scrollToEnd();
-        }
+        };
     </script>
 </html>

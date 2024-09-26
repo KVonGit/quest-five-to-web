@@ -2079,6 +2079,7 @@ function msg(text) {
         $("#" + thisBinding[0]).click(thisBinding[1]);
     }
     //%%END MAX V530
+    scrollToEnd();
 }
 
 function listadd(list, item) {
