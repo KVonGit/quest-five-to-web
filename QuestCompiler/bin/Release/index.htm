@@ -317,5 +317,10 @@
             scrollToEnd();
           };
         }, 500);
+        var printCenteredBak = PrintCentered;
+        function PrintCentered(text){
+          printCenteredBak(text);
+          scrollToEnd();
+        }
     </script>
 </html>

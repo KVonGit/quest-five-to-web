@@ -3,7 +3,7 @@ Quest Compiler
 KVMod
 version 6.5.1
 
-game.js version 202409232330
+game.js version 20240926.1723
 */
 
 var selectSizeWithoutStatus = 8;
@@ -706,9 +706,6 @@ function sendCommand(text) {
             else if (text.trim().toLowerCase() == "menu") {
                 $("#moreBtn").click();
             }
-            else if (text.trim().toLowerCase() == "transcript" || text.trim().toLowerCase() == "script") {
-                showTranscripts();
-            }
             else {
                 sendCommandInternal(text);
             }
@@ -1376,34 +1373,6 @@ function setCommandBarStyle(style) {
     $("#txtCommand").attr("style", style);
     $("#txtCommand").width(width);
 }
-/*
-var transcriptArr = [];
-function addText(text) {
-    if (_currentDiv == null) {
-        createNewDiv("left");
-    }
-	transcriptArr.push(text + '\n');
-    _currentDiv.append(text);
-    scrollToEnd();
-}
-*/
-// These variables added by KV for the transcript
-var transcriptEnabled = false;
-var transcriptProhibited = false;
-var transcriptName = "";
-
-// This function altered by KV for the transcript
-function addText(text) {
-    if (getCurrentDiv() == null) {
-        createNewDiv("left");
-    }
-    getCurrentDiv().append(text);
-    $("#divOutput").css("min-height", $("#divOutput").height());
-    if (transcriptEnabled && !transcriptProhibited) {
-      writeToTranscript(text);
-    }
-}
-
 
 var _divCount = 0;
 
@@ -1672,9 +1641,10 @@ function JsHideOutputSection(name) {
     $("." + name + " a").attr("onclick", "");
     setTimeout(function () {
         $("." + name).hide(250, function () { $(this).remove(); });
+        $("#divOutput").animate({'min-height':0}, 250);
+        scrollToEnd();
     }, 250);
 }
-
 
 /*
 	Modified by KV 08-13-2024, copied directly from https://github.com/textadventures/quest/blob/63f159054e088a40b3b22ed1954392c4d3cb9974/WebPlayer/playercore.js#L1031C1-L1073C2
@@ -3513,9 +3483,12 @@ function floor(val) {
     return Math.floor(val);
 };
 
-function addTextAndScroll(text) { addText('<br/>' + text); scrollToEnd(); };
+function addTextAndScroll(text) {
+  addText('<br/>' + text); 
+  scrollToEnd(); 
+};
 
-var msg = addTextAndScroll;
+
 
 function whereAmI() {
     ASLEvent("WhereAmI", platform);
@@ -4005,35 +3978,15 @@ function isLocalStorageAvailable(){
 
 var wnd;
 var tName = "";
-function openTranscript(tsn){
-  if (platform === "desktop") return;
-  if (!isLocalStorageAvailable()){
-    return;
-  }
-  var tscriptData = "";
-  tscriptData = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" + localStorage.getItem(tsn).replace(/@@@NEW_LINE@@@/g,"<br/>") || "No transcript data found.";
-  wnd = window.open("about:blank", "", "_blank");
-  wnd.document.write(tscriptData);
-  wnd.document.title = tsn.replace(/questtranscript-/,"") + " - Transcript";
-}
 
 var tscriptWindow;
 function showTranscripts(){
-  if (platform === "desktop") return;
-  if (!isLocalStorageAvailable()){
-    return;
-  }
-  var choices = [];
-  for (var e in localStorage) {
-    if (e.startsWith("questtranscript-")){
-      choices.push("<span id=\"" + e + "\" class=\"transcript-choice\"><a name=\"" + e + "\" href=\"#\" onclick=\"openTranscript(this.name);\" class=\"transcript-link\">" + e.replace(/questtranscript-/,"") + "</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\"  name=\"" + e + "\" onclick=\"removeTscript(this.name);\" class=\"transcript-delete\">DELETE</a></span>")
-    }
-  }
-  var choicesScript = "<script>var wnd;var tName = \"\";function openTranscript(tsn){ var tscriptData = \"\";  tscriptData = localStorage.getItem(tsn).replace(/@@@NEW_LINE@@@/g,\"<br/>\") || \"No transcript data found.\";  wnd = window.open(\"about:blank\", \"\", \"_blank\");  wnd.document.write(tscriptData);  wnd.document.title = tsn.replace(/questtranscript-/,\"\") + \" - Transcript\";};function removeTscript(tscript){console.log(tscript);var result = window.confirm(\"Delete this transcript?\");if (result){ localStorage.removeItem(tscript); document.getElementById(tscript).remove(); }};</script>";
+  var choicesScript = "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js\"></script><script>var yourTranscriptsVersion = '1.0.9';    var wnd;    var tName = '';    var choices = {};    function getSafeHtmlId(fixme){      return (fixme.replace(/ /g, '___SPACE___').replace(/'/g, '___SINGLE_QUOTE___').replace(/\"/g, '___DOUBLE_QUOTE___').replace(/:/g, '___COLON___').replace(/\\./g, '___DOT___').replace(/\#/g,'___HASH___'));     };    function reverseSafeHtmlId(unfixme){      return(unfixme.replace(/___SPACE___/g, ' ').replace(/___SINGLE_QUOTE___/g, \"\'\").replace(/___DOUBLE_QUOTE___/g, '\"').replace(/___COLON___/g, ':').replace(/___DOT___/g, '.').replace(/___HASH___/g, '#'));    };    function downloadTranscript(tsn){      event.stopPropagation();      var tscriptData = localStorage.getItem('questtranscript-' + reverseSafeHtmlId(tsn)).replace(/@@@NEW_LINE@@@/g,'\\r\\n') || 'No transcript data found.';      let link = document.createElement('a');      link.download = reverseSafeHtmlId(tsn) + '.txt';      let blob = new Blob([tscriptData], {type: 'text/plain'});      link.href = URL.createObjectURL(blob);      link.click();      URL.revokeObjectURL(link.href);    };    function openTranscript(tsn){      event.stopPropagation();      var tscriptData = localStorage.getItem('questtranscript-' + reverseSafeHtmlId(tsn)).replace(/@@@NEW_LINE@@@/g,'<br/>') || 'No transcript data found.';      wnd = window.open('about:blank', '', '_blank');      wnd.document.write(tscriptData);      wnd.document.title = reverseSafeHtmlId(tsn).replace(/questtranscript-/,'') + ' - Transcript';    };    function removeTscript(tscript){      event.stopPropagation();      var result = window.confirm('Delete this transcript?');      if (result){        console.log(tscript);        localStorage.removeItem('questtranscript-' + reverseSafeHtmlId(tscript));        document.getElementById(tscript).style.display = 'none';        delete choices[tscript.replace(/questtranscript-/,'')];      }      if (Object.keys(choices).length < 1){        document.getElementById('transcript-table-header').innerHTML = 'You have no transcripts.';      }    };    var tScriptTemplate = '<tr id=\"TRANSCRIPT_NAME\" class=\"transcript-entry-holder\" style=\"border:1px solid black; padding: 4px;\"><td class=\"transcript-name\" style=\"padding:4px\">TRANSCRIPT_DISPLAYED_NAME</td><td class=\"transcript-open-link-holder\"><button href=\"#\"  name=\"TRANSCRIPT_NAME\" onclick=\"openTranscript(this.name);\" class=\"transcript-open-link\">OPEN</button></td><td class=\"transcript-download-link-holder\"><button href=\"#\"  name=\"TRANSCRIPT_NAME\" onclick=\"downloadTranscript(this.name);\" class=\"transcript-download-link\">DOWNLOAD</button></td><td class=\"transcript-download-link-holder\"><button href=\"#\"  name=\"TRANSCRIPT_NAME\" onclick=\"removeTscript(this.name);\" class=\"transcript-delete-link\">DELETE</button></td></tr>';    function loadTable(){      $('head').append('<link rel=\"icon\" href=\"https://textadventures.blob.core.windows.net/gameresources/b7362b42-1513-408a-9ba5-7c2559820ccf/favicon-16x16.png\">');       if (Object.keys(choices).length > 0){        console.log('Ignoring call to load table. `choices` already exists.');        return;      }      if (!isLocalStorageAvailable()){        document.getElementById('transcript-table-header').innerHTML = 'The transcript feature is not available in this browser.';        return;      }      document.getElementById('transcript-table-header').innerHTML = 'Loading...';      for (var e in localStorage) {        if (e.startsWith('questtranscript-')){          var eName = e.replace(/questtranscript-/,'');          var safeName = getSafeHtmlId(eName);          choices[safeName] = tScriptTemplate.replace(/TRANSCRIPT_NAME/g, safeName).replace(/TRANSCRIPT_DISPLAYED_NAME/g, eName);        }      }      if (Object.keys(choices).length > 0){        document.getElementById('transcript-table-header').innerHTML = 'Your Transcripts';        for (var tname in choices){          $('#transcript-tbody').append(choices[tname]);        }      } else {        document.getElementById('transcript-table-header').innerHTML = 'You have no transcripts.';      }    };       function isLocalStorageAvailable(){        var test = 'test';        try {            localStorage.setItem(test, test);            localStorage.removeItem(test);            return true;        } catch(e) {            return false;        }    }; loadTable();</script>";
   tscriptWindow = window.open("about:blank", "", "_blank");
-  tscriptWindow.document.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><div id=\"main-holder\"><h3 id=\"your-transcripts\">Your Transcripts</h3><br/><div id=\"choices-holder\">" + choices.join("<br/>") + "</div></div>" + choicesScript);
+  tscriptWindow.document.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><table id=\"transcript-table\" style=\"margin: 0 auto; font-family: Source Sans Pro, Calibri, Candara, Arial, sans-serif; color: #333333; border-collapse:collapse;\">  <tbody id=\"transcript-tbody\">    <tr>      <th colspan=\"4\" id=\"transcript-table-header\" style=\"text-align: center; border: 1px solid black; background: #5c9ccc\\\">Loading...</th>    </tr>    <!-- PLACEHOLDER -->  </tbody></table>" + choicesScript);
   tscriptWindow.document.title = tName + "Your Transcripts";
 }
+
 
 
 // END OF TRANSCRIPT FUNCTIONS
