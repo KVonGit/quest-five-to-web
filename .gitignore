@@ -114,3 +114,7 @@ UpgradeLog*.XML
 /.vs
 .vs
 */bin
+/.vs
+/Compiler/bin
+/QuestJSWeb/bin
+/Utility/bin
