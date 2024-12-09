@@ -1,9 +1,9 @@
 /*
 Quest Compiler
 KVMod
-version 6.5.1
+version 6.5.2
 
-game.js version 20240926.1723
+game.js version 20241208.1100
 */
 
 var selectSizeWithoutStatus = 8;
@@ -205,7 +205,7 @@ function scrollToEnd() {
     scrollTimeout = setTimeout(function () {
         scrollTimeout = null;
         scrollToEndNow();
-    }, 200);
+    }, 500);
 }
 
 function scrollToEndNow() {
@@ -2079,6 +2079,7 @@ function msg(text) {
         $("#" + thisBinding[0]).click(thisBinding[1]);
     }
     //%%END MAX V530
+    scrollToEnd();
 }
 
 function listadd(list, item) {
@@ -2888,6 +2889,48 @@ function Replace(input, text, newText) {
     return input.split(text).join(newText);
 }
 
+function LTrim(txt){
+  return txt.trimLeft();
+};
+
+function RTrim(txt){
+  return txt.trimRight();
+};
+
+function startsWith(txt,s){
+  return StartsWith(txt,s);
+}
+
+Date.prototype.today = function () { 
+    return ((this.getDate() < 10)?"0":"") + this.getDate() +"/"+(((this.getMonth()+1) < 10)?"0":"") + (this.getMonth()+1) +"/"+ this.getFullYear();
+}
+
+// For the time now
+Date.prototype.timeNow = function () {
+     return ((this.getHours() < 10)?"0":"") + this.getHours() +":"+ ((this.getMinutes() < 10)?"0":"") + this.getMinutes() +":"+ ((this.getSeconds() < 10)?"0":"") + this.getSeconds();
+}
+
+let CurrentDate = function(){
+  return new Date().today();
+};
+
+let CurrentUtcDate = ()=>{
+  var now = new Date();
+  var utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+  return utc.today();
+};
+
+let CurrentTime = function(){
+  return new Date().timeNow();
+};
+
+let CurrentUtcTime = ()=>{
+  var now = new Date();
+  var utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+  return utc.timeNow();
+};
+
+
 var regexCache = new Object();
 
 function getRegex(regexString, cacheID) {
@@ -3489,6 +3532,22 @@ function addTextAndScroll(text) {
 };
 
 
+// These variables added by KV for the transcript
+var savingTranscript = false;
+var noTranscript = false;
+var transcriptName = "";
+
+// This function altered by KV for the transcript
+function addText(text) {
+    if (getCurrentDiv() == null) {
+        createNewDiv("left");
+    }
+    _currentDiv.append(text);
+    $("#divOutput").css("min-height", $("#divOutput").height());
+    if (savingTranscript && !noTranscript) {
+      writeToTranscript(text);
+    }
+}
 
 function whereAmI() {
     ASLEvent("WhereAmI", platform);
@@ -3789,51 +3848,26 @@ function setCustomStatus(s) {
 // Added by KV  
 
 function isMobilePlayer() {
-    return (platform === "mobile");
+    return false;
 };
 
-/**
-  * Added by KV for using the JS console for the Quest log when game.useconsolelog is set to true.
-  *
-  * @return {string} currentDateTime Time and date in format just like the Quest desktop log window
-*/
 function getTimeAndDateForLog(){
   var date = new Date();
-  var currentDateTime = date.toLocaleString('en-US', { timeZoneName: 'short' }).replace(/,/g, "").replace(/[A-Z][A-Z][A-Z]/g, "");
+  var currentDateTime = date.toLocaleString('en-US', { timeZoneName: 'short' }).replace(/,/g, "").replace(/[A-Z][A-Z][A-Z].*/g, "");
   return currentDateTime;
 };
 
+// **********************************
 // TRANSCRIPT STUFF
-
-
-// These variables added by KV for the transcript
-var transcriptEnabled = false;
-var transcriptProhibited = false;
-var transcriptName = "";
-
-// This function altered by KV for the transcript
-function addText(text) {
-    if (getCurrentDiv() == null) {
-        createNewDiv("left");
-    }
-    getCurrentDiv().append(text);
-    $("#divOutput").css("min-height", $("#divOutput").height());
-    if (transcriptEnabled && !transcriptProhibited) {
-      writeToTranscript(text);
-    }
-}
 
 /**
   * Added by KV
   *
-  * This will write/append to a TXT document in Documents\Quest Transcripts
-  *  if using the desktop player and the the player has the transcript enabled
-  *  and if transcriptProhibited is not set to true (it is false by default).
-  *
-  * @param {string} text The string to be written to the file
+  * This will write/append to localStorage if the player has the transcript enabled
+  *  and if noTranscript is not set to true (it is false by default).
 */
 function writeToTranscript(text){
-  if (!transcriptProhibited && transcriptEnabled) {
+  if (!noTranscript && savingTranscript) {
     var faker = document.createElement('div');
     faker.innerHTML = text;
     text = faker.innerHTML;
@@ -3863,14 +3897,12 @@ function writeToTranscript(text){
 }
 
 /**
-  * This will enable the transcript unless transcriptProhibited is set to true.
-  * 
-  * @param {name} text If this is defined, the transcriptName will be set to this.
+  * This will enable the transcript unless noTranscript is set to true.
 */
 function enableTranscript(name){
-  if (transcriptProhibited) return;
+  if (noTranscript) return;
   transcriptName = name || transcriptName || gameName;
-  transcriptEnabled = true;
+  savingTranscript = true;
 }
 
 /**
@@ -3878,7 +3910,7 @@ function enableTranscript(name){
   * 
 */
 function disableTranscript(){
-  transcriptEnabled = false;
+  savingTranscript = false;
 }
 
 /**
@@ -3886,14 +3918,12 @@ function disableTranscript(){
   * 
 */
 function killTranscript(){
-  transcriptProhibited = true;
+  noTranscript = true;
   disableTranscript();
 }
 
 /**
   * Make it easy to control transcript settings from Quest.
-  * 
-  * @param {name} status The state the transcript will be set to.
 */
 function setTranscriptStatus(status){
   switch (status){
@@ -3910,38 +3940,46 @@ function setTranscriptStatus(status){
       killTranscript();
       break;
     case "allowed":
-      transcriptProhibited = false;
+      noTranscript = false;
   }
 }
 
-/**
-  * 
+var showedSaveTranscriptWarning = false;
 /**
   * This function was missing from the webplayer in Quest 5.8.0
   * Leaving this here as a fallback
-  * 
-  * @param {string} text The line(s) of text being printed
 */
 function SaveTranscript(text){
-  console.log("[QUEST]: SaveTranscript has been deprecated. Using writeToTranscript instead.");
+  if(!showedSaveTranscriptWarning){
+    console.log("[QUEST]: SaveTranscript has been deprecated. Using writeToTranscript instead.");
+    showedSaveTranscriptWarning = true;
+  }
   writeToTranscript(text);  
 }
 
+var transcriptUrl = 'Play.aspx?id=4wqdac8qd0sf7-ilff8mia';
+// Another fallback to avoid errors
+function showTranscript(){
+  if (webPlayer){
+    addTextAndScroll('Your transcripts are saved to the localStorage in your browser. You can view, download, or delete them here: <a href="' + transcriptUrl + '" target="_blank">Your Transcripts</a><br/>');
+  }
+  else {
+    addTextAndScroll('Your transcripts are saved to "Documents\\Quest Transcripts\\".<br/>');
+  }
+};
 
-/**
-  * Writes data to the transcript's item in localStorage.
-  *
-  * @param {string} text This is added to the transcriptData item in localStorage
-*/
+
+// Writes data to the transcript's item in localStorage.
+
 function WriteToTranscript(data){
-  if (transcriptProhibited){
+  if (noTranscript){
     // Do nothing.
     return;
   }
   if (!isLocalStorageAvailable()){
     console.error("There is no localStorage. Disabling transcript functionality.");
-    transcriptProhibited = true;
-    transcriptEnabled = false;
+    noTranscript = true;
+    savingTranscript = false;
     return;
   }
   var tName = transcriptName || "Transcript";
@@ -3975,6 +4013,8 @@ function isLocalStorageAvailable(){
     }
 }
 
+// Unused functions to open a list of transcripts in a separate window
+
 
 var wnd;
 var tName = "";
@@ -4002,7 +4042,6 @@ function WriteToLog(data){
   /* Do nothing at all. */
   return;
 }
-
 
 
 /*

@@ -60,6 +60,7 @@ div#status
     font-size: 80%;
     margin-bottom: 10px;
     padding-left: 10px;
+    cursor: auto;
 }
 .emptyListLabel
 {
@@ -87,6 +88,7 @@ div#divOutput
 div#gameObjects
 {   
     background: white;
+    cursor: pointer;
 }
 
 div#gameMore
@@ -226,5 +228,6 @@ max-width:20%;
 #placesObjectsAccordion, #inventoryAccordion {
 	max-height:150px;
 	overflow-y:scroll;
+  cursor: pointer;
 }
 

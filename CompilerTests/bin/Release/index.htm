@@ -307,4 +307,25 @@
             </div>
         </div>
     </body>
+    <script>
+      // FIX BUGS IN CONVERTED GAMES
+      // ANYTHING HERE OVERRIDES THE CODE IN game.js
+        setTimeout(function(){
+          var showMenuBak = ShowMenu;
+          ShowMenu = function(){
+            showMenuBak(...arguments);
+            scrollToEnd();
+          };
+        }, 500);
+        var printCenteredBak = PrintCentered;
+        var PrintCentered = function(text){
+          printCenteredBak(text);
+          scrollToEnd();
+        };
+        var outputTextBak = OutputText;
+        var OutputText = (txt)=>{
+          outputTextBak(txt);
+          scrollToEnd();
+        };
+    </script>
 </html>

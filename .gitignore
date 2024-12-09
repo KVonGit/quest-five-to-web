@@ -118,3 +118,4 @@ UpgradeLog*.XML
 /Compiler/bin
 /QuestJSWeb/bin
 /Utility/bin
+/Compiler/bin
