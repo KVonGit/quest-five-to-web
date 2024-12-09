@@ -1,9 +1,9 @@
 /*
 Quest Compiler
 KVMod
-version 6.5
+version 6.5.2
 
-game.js version 20240814.1555
+game.js version 20241208.1100
 */
 
 var selectSizeWithoutStatus = 8;
@@ -205,7 +205,7 @@ function scrollToEnd() {
     scrollTimeout = setTimeout(function () {
         scrollTimeout = null;
         scrollToEndNow();
-    }, 200);
+    }, 500);
 }
 
 function scrollToEndNow() {
@@ -613,6 +613,8 @@ function updateCompass(directions) {
     updateDir(directions, "D", _compassDirs[9]);
     updateDir(directions, "In", _compassDirs[10]);
     updateDir(directions, "Out", _compassDirs[11]);
+    // fix to make compass button icons centred
+    $(".compassbutton span").css("left", "0.8em");
 }
 
 function updateDir(directions, label, dir) {
@@ -624,8 +626,7 @@ function updateDir(directions, label, dir) {
         $("#cmdCompass" + label).button("enable");
         $("#cmdCompass" + label).removeClass("ui-state-disabled").removeClass("ui-button-disabled");
     }
-    // fix to make compass button icons centred
-    $(".compassbutton span").css("left", "0.8em");
+    
 }
 
 
@@ -704,9 +705,6 @@ function sendCommand(text) {
             }
             else if (text.trim().toLowerCase() == "menu") {
                 $("#moreBtn").click();
-            }
-            else if (text.trim().toLowerCase() == "transcript" || text.trim().toLowerCase() == "script") {
-                showTranscript();
             }
             else {
                 sendCommandInternal(text);
@@ -1375,34 +1373,6 @@ function setCommandBarStyle(style) {
     $("#txtCommand").attr("style", style);
     $("#txtCommand").width(width);
 }
-/*
-var transcriptArr = [];
-function addText(text) {
-    if (_currentDiv == null) {
-        createNewDiv("left");
-    }
-	transcriptArr.push(text + '\n');
-    _currentDiv.append(text);
-    scrollToEnd();
-}
-*/
-// These variables added by KV for the transcript
-var transcriptEnabled = false;
-var transcriptProhibited = false;
-var transcriptName = "";
-
-// This function altered by KV for the transcript
-function addText(text) {
-    if (getCurrentDiv() == null) {
-        createNewDiv("left");
-    }
-    getCurrentDiv().append(text);
-    $("#divOutput").css("min-height", $("#divOutput").height());
-    if (transcriptEnabled && !transcriptProhibited) {
-      writeToTranscript(text);
-    }
-}
-
 
 var _divCount = 0;
 
@@ -1526,6 +1496,58 @@ function clearScreen() {
         $("html,body").scrollTop(0);
     }, 100);
 }
+// Modified by KV to handle the scrollback feature
+// Changing saveClearedText to false by default, due to performance issues.
+var saveClearedText = false;
+// Authors can change noScrollback to true to disable the scrollback functions.
+var noScrollback = false;
+var clearedOnce = false;
+function clearScreen() {
+    if (!saveClearedText) {
+        $("#divOutput").css("min-height", 0);
+        $("#divOutput").html("");
+        createNewDiv("left");
+        beginningOfCurrentTurnScrollPosition = 0;
+        setTimeout(function () {
+            $("html,body").scrollTop(0);
+        }, 100);
+    } else {
+        $("#divOutput").append("<hr class='clearedAbove' />");
+        if (!clearedOnce) {
+            addText('<style>#divOutput > .clearedScreen { display: none; }</style>');
+        }
+        clearedOnce = true;
+        $('#divOutput').children().addClass('clearedScreen');
+        $('#divOutput').css('min-height', 0);
+        createNewDiv('left');
+        beginningOfCurrentTurnScrollPosition = 0;
+        setTimeout(function () {
+            $('html,body').scrollTop(0);
+        }, 100);
+    }
+}
+
+// Scrollback function added by KV
+
+/**
+ * The player can print the game's text or save as PDF.
+ * This will include cleared text if saveClearedText is set to true (saveClearedText is false by default).
+ * Setting noScrollback to true will disable this. (noScrollback is false by default)
+ */
+function printScrollback() {
+  if (noScrollback) return;
+  addText("<div id='scrollback-hider' style='display:none; color:black !important; background-color:white !important; font-family:sans-serif !important;background:white !important;text-align:left !important;'><div id='scrollbackdata'></div></div>");
+  $('#scrollbackdata').html($('#divOutput').html());
+  $("#scrollbackdata a").addClass("disabled");
+  setTimeout(function () {
+      $("#scrollbackdata a").addClass("disabled");
+  }, 1);
+  var iframe = document.createElement('iframe');
+  document.body.appendChild(iframe);
+  iframe.contentWindow.document.write($("#scrollbackdata").html());
+  iframe.contentWindow.print();
+  document.body.removeChild(iframe);
+};
 
 function keyPressCode(e) {
     var keynum
@@ -1619,9 +1641,10 @@ function JsHideOutputSection(name) {
     $("." + name + " a").attr("onclick", "");
     setTimeout(function () {
         $("." + name).hide(250, function () { $(this).remove(); });
+        $("#divOutput").animate({'min-height':0}, 250);
+        scrollToEnd();
     }, 250);
 }
-
 
 /*
 	Modified by KV 08-13-2024, copied directly from https://github.com/textadventures/quest/blob/63f159054e088a40b3b22ed1954392c4d3cb9974/WebPlayer/playercore.js#L1031C1-L1073C2
@@ -2056,6 +2079,7 @@ function msg(text) {
         $("#" + thisBinding[0]).click(thisBinding[1]);
     }
     //%%END MAX V530
+    scrollToEnd();
 }
 
 function listadd(list, item) {
@@ -2865,6 +2889,48 @@ function Replace(input, text, newText) {
     return input.split(text).join(newText);
 }
 
+function LTrim(txt){
+  return txt.trimLeft();
+};
+
+function RTrim(txt){
+  return txt.trimRight();
+};
+
+function startsWith(txt,s){
+  return StartsWith(txt,s);
+}
+
+Date.prototype.today = function () { 
+    return ((this.getDate() < 10)?"0":"") + this.getDate() +"/"+(((this.getMonth()+1) < 10)?"0":"") + (this.getMonth()+1) +"/"+ this.getFullYear();
+}
+
+// For the time now
+Date.prototype.timeNow = function () {
+     return ((this.getHours() < 10)?"0":"") + this.getHours() +":"+ ((this.getMinutes() < 10)?"0":"") + this.getMinutes() +":"+ ((this.getSeconds() < 10)?"0":"") + this.getSeconds();
+}
+
+let CurrentDate = function(){
+  return new Date().today();
+};
+
+let CurrentUtcDate = ()=>{
+  var now = new Date();
+  var utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+  return utc.today();
+};
+
+let CurrentTime = function(){
+  return new Date().timeNow();
+};
+
+let CurrentUtcTime = ()=>{
+  var now = new Date();
+  var utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
+  return utc.timeNow();
+};
+
+
 var regexCache = new Object();
 
 function getRegex(regexString, cacheID) {
@@ -3160,6 +3226,10 @@ function OverloadedFunctions() {
         params["object2"] = arg2;
         return dynamicTemplates[name](params);
     });
+    
+    addMethod(this, "DynamicTemplate", function (name) {
+        return (dynamicTemplates[name]());
+    });
 
     addMethod(this, "Eval", function (expression) {
         return eval(expression);
@@ -3361,7 +3431,8 @@ function IsGameRunning() {
 
 function IsDefined(variable) {
 	//TODO
-    return true;
+    //return true;
+    return (typeof variable != null);
 }
 
 function GetRandomInt(min, max) {
@@ -3455,9 +3526,28 @@ function floor(val) {
     return Math.floor(val);
 };
 
-function addTextAndScroll(text) { addText('<br/>' + text); scrollToEnd(); };
+function addTextAndScroll(text) {
+  addText('<br/>' + text); 
+  scrollToEnd(); 
+};
 
-var msg = addTextAndScroll;
+
+// These variables added by KV for the transcript
+var savingTranscript = false;
+var noTranscript = false;
+var transcriptName = "";
+
+// This function altered by KV for the transcript
+function addText(text) {
+    if (getCurrentDiv() == null) {
+        createNewDiv("left");
+    }
+    _currentDiv.append(text);
+    $("#divOutput").css("min-height", $("#divOutput").height());
+    if (savingTranscript && !noTranscript) {
+      writeToTranscript(text);
+    }
+}
 
 function whereAmI() {
     ASLEvent("WhereAmI", platform);
@@ -3758,51 +3848,26 @@ function setCustomStatus(s) {
 // Added by KV  
 
 function isMobilePlayer() {
-    return (platform === "mobile");
+    return false;
 };
 
-/**
-  * Added by KV for using the JS console for the Quest log when game.useconsolelog is set to true.
-  *
-  * @return {string} currentDateTime Time and date in format just like the Quest desktop log window
-*/
 function getTimeAndDateForLog(){
   var date = new Date();
-  var currentDateTime = date.toLocaleString('en-US', { timeZoneName: 'short' }).replace(/,/g, "").replace(/[A-Z][A-Z][A-Z]/g, "");
+  var currentDateTime = date.toLocaleString('en-US', { timeZoneName: 'short' }).replace(/,/g, "").replace(/[A-Z][A-Z][A-Z].*/g, "");
   return currentDateTime;
 };
 
+// **********************************
 // TRANSCRIPT STUFF
-
-
-// These variables added by KV for the transcript
-var transcriptEnabled = false;
-var transcriptProhibited = false;
-var transcriptName = "";
-
-// This function altered by KV for the transcript
-function addText(text) {
-    if (getCurrentDiv() == null) {
-        createNewDiv("left");
-    }
-    getCurrentDiv().append(text);
-    $("#divOutput").css("min-height", $("#divOutput").height());
-    if (transcriptEnabled && !transcriptProhibited) {
-      writeToTranscript(text);
-    }
-}
 
 /**
   * Added by KV
   *
-  * This will write/append to a TXT document in Documents\Quest Transcripts
-  *  if using the desktop player and the the player has the transcript enabled
-  *  and if transcriptProhibited is not set to true (it is false by default).
-  *
-  * @param {string} text The string to be written to the file
+  * This will write/append to localStorage if the player has the transcript enabled
+  *  and if noTranscript is not set to true (it is false by default).
 */
 function writeToTranscript(text){
-  if (!transcriptProhibited && transcriptEnabled) {
+  if (!noTranscript && savingTranscript) {
     var faker = document.createElement('div');
     faker.innerHTML = text;
     text = faker.innerHTML;
@@ -3832,14 +3897,12 @@ function writeToTranscript(text){
 }
 
 /**
-  * This will enable the transcript unless transcriptProhibited is set to true.
-  * 
-  * @param {name} text If this is defined, the transcriptName will be set to this.
+  * This will enable the transcript unless noTranscript is set to true.
 */
 function enableTranscript(name){
-  if (transcriptProhibited) return;
+  if (noTranscript) return;
   transcriptName = name || transcriptName || gameName;
-  transcriptEnabled = true;
+  savingTranscript = true;
 }
 
 /**
@@ -3847,7 +3910,7 @@ function enableTranscript(name){
   * 
 */
 function disableTranscript(){
-  transcriptEnabled = false;
+  savingTranscript = false;
 }
 
 /**
@@ -3855,14 +3918,12 @@ function disableTranscript(){
   * 
 */
 function killTranscript(){
-  transcriptProhibited = true;
+  noTranscript = true;
   disableTranscript();
 }
 
 /**
   * Make it easy to control transcript settings from Quest.
-  * 
-  * @param {name} status The state the transcript will be set to.
 */
 function setTranscriptStatus(status){
   switch (status){
@@ -3879,38 +3940,46 @@ function setTranscriptStatus(status){
       killTranscript();
       break;
     case "allowed":
-      transcriptProhibited = false;
+      noTranscript = false;
   }
 }
 
-/**
-  * 
+var showedSaveTranscriptWarning = false;
 /**
   * This function was missing from the webplayer in Quest 5.8.0
   * Leaving this here as a fallback
-  * 
-  * @param {string} text The line(s) of text being printed
 */
 function SaveTranscript(text){
-  console.log("[QUEST]: SaveTranscript has been deprecated. Using writeToTranscript instead.");
+  if(!showedSaveTranscriptWarning){
+    console.log("[QUEST]: SaveTranscript has been deprecated. Using writeToTranscript instead.");
+    showedSaveTranscriptWarning = true;
+  }
   writeToTranscript(text);  
 }
 
+var transcriptUrl = 'Play.aspx?id=4wqdac8qd0sf7-ilff8mia';
+// Another fallback to avoid errors
+function showTranscript(){
+  if (webPlayer){
+    addTextAndScroll('Your transcripts are saved to the localStorage in your browser. You can view, download, or delete them here: <a href="' + transcriptUrl + '" target="_blank">Your Transcripts</a><br/>');
+  }
+  else {
+    addTextAndScroll('Your transcripts are saved to "Documents\\Quest Transcripts\\".<br/>');
+  }
+};
 
-/**
-  * Writes data to the transcript's item in localStorage.
-  *
-  * @param {string} text This is added to the transcriptData item in localStorage
-*/
+
+// Writes data to the transcript's item in localStorage.
+
 function WriteToTranscript(data){
-  if (transcriptProhibited){
+  if (noTranscript){
     // Do nothing.
     return;
   }
   if (!isLocalStorageAvailable()){
     console.error("There is no localStorage. Disabling transcript functionality.");
-    transcriptProhibited = true;
-    transcriptEnabled = false;
+    noTranscript = true;
+    savingTranscript = false;
     return;
   }
   var tName = transcriptName || "Transcript";
@@ -3944,38 +4013,20 @@ function isLocalStorageAvailable(){
     }
 }
 
+// Unused functions to open a list of transcripts in a separate window
+
 
 var wnd;
 var tName = "";
-function openTranscript(tsn){
-  if (platform === "desktop") return;
-  if (!isLocalStorageAvailable()){
-    return;
-  }
-  var tscriptData = "";
-  tscriptData = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" + localStorage.getItem(tsn).replace(/@@@NEW_LINE@@@/g,"<br/>") || "No transcript data found.";
-  wnd = window.open("about:blank", "", "_blank");
-  wnd.document.write(tscriptData);
-  wnd.document.title = tsn.replace(/questtranscript-/,"") + " - Transcript";
-}
 
 var tscriptWindow;
 function showTranscripts(){
-  if (platform === "desktop") return;
-  if (!isLocalStorageAvailable()){
-    return;
-  }
-  var choices = [];
-  for (var e in localStorage) {
-    if (e.startsWith("questtranscript-")){
-      choices.push("<span id=\"" + e + "\" class=\"transcript-choice\"><a name=\"" + e + "\" href=\"#\" onclick=\"openTranscript(this.name);\" class=\"transcript-link\">" + e.replace(/questtranscript-/,"") + "</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\"  name=\"" + e + "\" onclick=\"removeTscript(this.name);\" class=\"transcript-delete\">DELETE</a></span>")
-    }
-  }
-  var choicesScript = "<script>var wnd;var tName = \"\";function openTranscript(tsn){ var tscriptData = \"\";  tscriptData = localStorage.getItem(tsn).replace(/@@@NEW_LINE@@@/g,\"<br/>\") || \"No transcript data found.\";  wnd = window.open(\"about:blank\", \"\", \"_blank\");  wnd.document.write(tscriptData);  wnd.document.title = tsn.replace(/questtranscript-/,\"\") + \" - Transcript\";};function removeTscript(tscript){console.log(tscript);var result = window.confirm(\"Delete this transcript?\");if (result){ localStorage.removeItem(tscript); document.getElementById(tscript).remove(); }};</script>";
+  var choicesScript = "<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js\"></script><script>var yourTranscriptsVersion = '1.0.9';    var wnd;    var tName = '';    var choices = {};    function getSafeHtmlId(fixme){      return (fixme.replace(/ /g, '___SPACE___').replace(/'/g, '___SINGLE_QUOTE___').replace(/\"/g, '___DOUBLE_QUOTE___').replace(/:/g, '___COLON___').replace(/\\./g, '___DOT___').replace(/\#/g,'___HASH___'));     };    function reverseSafeHtmlId(unfixme){      return(unfixme.replace(/___SPACE___/g, ' ').replace(/___SINGLE_QUOTE___/g, \"\'\").replace(/___DOUBLE_QUOTE___/g, '\"').replace(/___COLON___/g, ':').replace(/___DOT___/g, '.').replace(/___HASH___/g, '#'));    };    function downloadTranscript(tsn){      event.stopPropagation();      var tscriptData = localStorage.getItem('questtranscript-' + reverseSafeHtmlId(tsn)).replace(/@@@NEW_LINE@@@/g,'\\r\\n') || 'No transcript data found.';      let link = document.createElement('a');      link.download = reverseSafeHtmlId(tsn) + '.txt';      let blob = new Blob([tscriptData], {type: 'text/plain'});      link.href = URL.createObjectURL(blob);      link.click();      URL.revokeObjectURL(link.href);    };    function openTranscript(tsn){      event.stopPropagation();      var tscriptData = localStorage.getItem('questtranscript-' + reverseSafeHtmlId(tsn)).replace(/@@@NEW_LINE@@@/g,'<br/>') || 'No transcript data found.';      wnd = window.open('about:blank', '', '_blank');      wnd.document.write(tscriptData);      wnd.document.title = reverseSafeHtmlId(tsn).replace(/questtranscript-/,'') + ' - Transcript';    };    function removeTscript(tscript){      event.stopPropagation();      var result = window.confirm('Delete this transcript?');      if (result){        console.log(tscript);        localStorage.removeItem('questtranscript-' + reverseSafeHtmlId(tscript));        document.getElementById(tscript).style.display = 'none';        delete choices[tscript.replace(/questtranscript-/,'')];      }      if (Object.keys(choices).length < 1){        document.getElementById('transcript-table-header').innerHTML = 'You have no transcripts.';      }    };    var tScriptTemplate = '<tr id=\"TRANSCRIPT_NAME\" class=\"transcript-entry-holder\" style=\"border:1px solid black; padding: 4px;\"><td class=\"transcript-name\" style=\"padding:4px\">TRANSCRIPT_DISPLAYED_NAME</td><td class=\"transcript-open-link-holder\"><button href=\"#\"  name=\"TRANSCRIPT_NAME\" onclick=\"openTranscript(this.name);\" class=\"transcript-open-link\">OPEN</button></td><td class=\"transcript-download-link-holder\"><button href=\"#\"  name=\"TRANSCRIPT_NAME\" onclick=\"downloadTranscript(this.name);\" class=\"transcript-download-link\">DOWNLOAD</button></td><td class=\"transcript-download-link-holder\"><button href=\"#\"  name=\"TRANSCRIPT_NAME\" onclick=\"removeTscript(this.name);\" class=\"transcript-delete-link\">DELETE</button></td></tr>';    function loadTable(){      $('head').append('<link rel=\"icon\" href=\"https://textadventures.blob.core.windows.net/gameresources/b7362b42-1513-408a-9ba5-7c2559820ccf/favicon-16x16.png\">');       if (Object.keys(choices).length > 0){        console.log('Ignoring call to load table. `choices` already exists.');        return;      }      if (!isLocalStorageAvailable()){        document.getElementById('transcript-table-header').innerHTML = 'The transcript feature is not available in this browser.';        return;      }      document.getElementById('transcript-table-header').innerHTML = 'Loading...';      for (var e in localStorage) {        if (e.startsWith('questtranscript-')){          var eName = e.replace(/questtranscript-/,'');          var safeName = getSafeHtmlId(eName);          choices[safeName] = tScriptTemplate.replace(/TRANSCRIPT_NAME/g, safeName).replace(/TRANSCRIPT_DISPLAYED_NAME/g, eName);        }      }      if (Object.keys(choices).length > 0){        document.getElementById('transcript-table-header').innerHTML = 'Your Transcripts';        for (var tname in choices){          $('#transcript-tbody').append(choices[tname]);        }      } else {        document.getElementById('transcript-table-header').innerHTML = 'You have no transcripts.';      }    };       function isLocalStorageAvailable(){        var test = 'test';        try {            localStorage.setItem(test, test);            localStorage.removeItem(test);            return true;        } catch(e) {            return false;        }    }; loadTable();</script>";
   tscriptWindow = window.open("about:blank", "", "_blank");
-  tscriptWindow.document.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><div id=\"main-holder\"><h3 id=\"your-transcripts\">Your Transcripts</h3><br/><div id=\"choices-holder\">" + choices.join("<br/>") + "</div></div>" + choicesScript);
+  tscriptWindow.document.write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><table id=\"transcript-table\" style=\"margin: 0 auto; font-family: Source Sans Pro, Calibri, Candara, Arial, sans-serif; color: #333333; border-collapse:collapse;\">  <tbody id=\"transcript-tbody\">    <tr>      <th colspan=\"4\" id=\"transcript-table-header\" style=\"text-align: center; border: 1px solid black; background: #5c9ccc\\\">Loading...</th>    </tr>    <!-- PLACEHOLDER -->  </tbody></table>" + choicesScript);
   tscriptWindow.document.title = tName + "Your Transcripts";
 }
+
 
 
 // END OF TRANSCRIPT FUNCTIONS
@@ -3991,7 +4042,6 @@ function WriteToLog(data){
   /* Do nothing at all. */
   return;
 }
-
 
 
 /*
