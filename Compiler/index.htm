@@ -322,5 +322,10 @@
           printCenteredBak(text);
           scrollToEnd();
         };
+        var outputTextBak = OutputText;
+        var OutputText = (txt)=>{
+          outputTextBak(txt);
+          scrollToEnd();
+        };
     </script>
 </html>

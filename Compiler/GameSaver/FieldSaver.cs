@@ -94,9 +94,9 @@ namespace TextAdventures.Quest
                 // Added by KV to fix errors when attribute strings contain line breaks
                 if (attribute.Contains("uistatus") &&  (value.Contains("\n") || value.Contains("\r\n")))
                 {
-                    value = value.Replace("\n", "<br/>");
                     value = value.Replace("\r\n", "<br/>");
-                }
+                    value = value.Replace("\n", "<br/>");
+               }
 
                 writer.AddLine(string.Format("\"{0}\": {1}{2}", attribute, value, isFinal ? "" : ","));
             }
@@ -251,7 +251,7 @@ namespace TextAdventures.Quest
                         {
                             parameters = "oldvalue";
                         }
-                        else if (attribute.StartsWith("textprocessorcommands")) {
+                        else if (attribute == "textprocessorcommands") {
                             parameters = "section, data";
                         }
                         base.WriteAttribute(writer, element, attribute, string.Format("function({1}) {{ {0} }}", savedScript, parameters), isFinal);
@@ -336,7 +336,12 @@ namespace TextAdventures.Quest
 
             protected override string ValueSaver(IScript value)
             {
-                return string.Format("function() {{ {0} }}", value == null ? string.Empty : value.Save(new Context()));
+                string valueAsString = string.Format("function() {{ {0} }}", value == null ? string.Empty : value.Save(new Context()));
+                //if (valueAsString.Contains("textprocessorcommandresult")) {
+                    //valueAsString = valueAsString.Replace("function()","function(section, data)");
+                    
+                //}
+                return valueAsString;
             }
         }
 

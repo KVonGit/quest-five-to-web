@@ -38,7 +38,7 @@ namespace QuestCompiler
             s = s + "(All scripts will point to it, and the alias will be set to 'key'.)";
 			s = s + "\n\nYou will likely have to deal with errors.";
             s = s + "\n\nGOOD LUCK!!!";
-            MessageBox.Show(s, "Quest Compiler (Version 6.5.1): A Few Words of Warning");
+            MessageBox.Show(s, "Quest Compiler (Version 6.5.2): A Few Words of Warning");
             InitializeComponent();
             compiler.CompileFinished += compiler_CompileFinished;
             compiler.StatusUpdated += compiler_StatusUpdated;

@@ -15,6 +15,7 @@ namespace TextAdventures.Quest
         v540,
         v550,
         v580,
+        v590,
     }
 
     public partial class GameLoader
@@ -61,6 +62,7 @@ namespace TextAdventures.Quest
             {"540", WorldModelVersion.v540},
             {"550", WorldModelVersion.v550},
             {"580", WorldModelVersion.v580},
+            {"590", WorldModelVersion.v590},
         };
 
         public GameLoader()
